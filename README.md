@@ -1,4 +1,4 @@
-# OneMusic React
+# OneMusic
 
 A polished React + Vite app for a music-first experience, styled with a design-system-inspired token palette and responsive layout.
 
