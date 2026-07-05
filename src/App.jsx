@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionRequiredAuthError, PublicClientApplication } from '@azure/msal-browser';
 import AlbumArt, { artworkDataUrl } from './AlbumArt';
-import { IconMusic, IconSearch, IconPlay, IconPause, IconPrev, IconNext, IconVolumeLow, IconVolumeHigh } from './icons';
+import { IconMusic, IconSearch, IconPlay, IconPause, IconPrev, IconNext, IconVolumeLow, IconVolumeHigh, IconDownload, IconCheck, IconTrash, IconSpinner, IconList, IconAlbum } from './icons';
+import { saveTrack, getTrackBlob, listTracks, deleteTrack } from './offline';
 
 const AUDIO_EXTENSIONS = new Set(['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'oga', 'opus', 'wma', 'mpeg', 'mp4', 'm4b', 'alac']);
 const SCOPES = ['User.Read', 'Files.Read.All', 'offline_access'];
@@ -89,10 +90,18 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isNowPlayingOpen, setNowPlayingOpen] = useState(false);
   const [isSyncOpen, setSyncOpen] = useState(true);
+  const [viewMode, setViewMode] = useState('songs');
+  const [downloadedIds, setDownloadedIds] = useState(() => new Set());
+  const [downloadedTracks, setDownloadedTracks] = useState([]);
+  const [downloadingIds, setDownloadingIds] = useState(() => new Set());
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const audioRef = useRef(null);
   const msalRef = useRef(null);
-  const objectUrlRef = useRef('');
+  const blobUrlCacheRef = useRef(new Map());
   const scanIdRef = useRef(0);
+  const orderedTracksRef = useRef([]);
+  const dragStartRef = useRef(null);
   const config = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return {
@@ -164,10 +173,26 @@ function App() {
   }, [config.clientId, config.redirectUri, config.tenant]);
 
   useEffect(() => {
+    const cache = blobUrlCacheRef.current;
     return () => {
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-      }
+      cache.forEach((url) => URL.revokeObjectURL(url));
+      cache.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    listTracks()
+      .then((rows) => {
+        if (cancelled) {
+          return;
+        }
+        setDownloadedTracks(rows);
+        setDownloadedIds(new Set(rows.map((row) => row.id)));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -197,7 +222,46 @@ function App() {
     return tracks.filter((track) => `${track.title} ${track.artist} ${track.album} ${track.name}`.toLowerCase().includes(query));
   }, [searchTerm, tracks]);
 
-  const activeTrack = useMemo(() => tracks.find((track) => track.id === activeTrackId) || null, [activeTrackId, tracks]);
+  const albumGroups = useMemo(() => {
+    const map = new Map();
+    visibleTracks.forEach((track) => {
+      const key = track.album || 'Unknown album';
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key).push(track);
+    });
+    return Array.from(map.entries())
+      .map(([album, items]) => ({ album, tracks: items }))
+      .sort((left, right) => left.album.localeCompare(right.album));
+  }, [visibleTracks]);
+
+  const visibleDownloaded = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) {
+      return downloadedTracks;
+    }
+    return downloadedTracks.filter((track) => `${track.title} ${track.artist} ${track.album} ${track.name}`.toLowerCase().includes(query));
+  }, [searchTerm, downloadedTracks]);
+
+  const orderedTracks = useMemo(() => {
+    if (viewMode === 'downloaded') {
+      return visibleDownloaded;
+    }
+    if (viewMode === 'albums') {
+      return albumGroups.flatMap((group) => group.tracks);
+    }
+    return visibleTracks;
+  }, [viewMode, visibleTracks, albumGroups, visibleDownloaded]);
+
+  useEffect(() => {
+    orderedTracksRef.current = orderedTracks;
+  }, [orderedTracks]);
+
+  const activeTrack = useMemo(
+    () => tracks.find((track) => track.id === activeTrackId) || downloadedTracks.find((track) => track.id === activeTrackId) || null,
+    [activeTrackId, tracks, downloadedTracks],
+  );
 
   const ensureAccessToken = async (accountToUse = account) => {
     if (!msalRef.current) {
@@ -220,6 +284,85 @@ function App() {
       }
       throw error;
     }
+  };
+
+  const fetchTrackBlob = async (track) => {
+    const token = await ensureAccessToken();
+    const response = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${track.id}/content`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw new Error(`Audio download failed with status ${response.status}`);
+    }
+    return response.blob();
+  };
+
+  const resolveObjectUrl = async (track) => {
+    const cache = blobUrlCacheRef.current;
+    if (cache.has(track.id)) {
+      return cache.get(track.id);
+    }
+    let blob = null;
+    try {
+      blob = await getTrackBlob(track.id);
+    } catch (offlineError) {
+      blob = null;
+    }
+    if (!blob) {
+      blob = await fetchTrackBlob(track);
+    }
+    if (cache.has(track.id)) {
+      return cache.get(track.id);
+    }
+    const url = URL.createObjectURL(blob);
+    cache.set(track.id, url);
+    return url;
+  };
+
+  const handleDownload = async (track) => {
+    if (downloadedIds.has(track.id) || downloadingIds.has(track.id)) {
+      return;
+    }
+    setDownloadingIds((current) => new Set(current).add(track.id));
+    try {
+      const blob = await fetchTrackBlob(track);
+      await saveTrack(track, blob);
+      if (!blobUrlCacheRef.current.has(track.id)) {
+        blobUrlCacheRef.current.set(track.id, URL.createObjectURL(blob));
+      }
+      setDownloadedIds((current) => new Set(current).add(track.id));
+      setDownloadedTracks((current) => {
+        if (current.some((item) => item.id === track.id)) {
+          return current;
+        }
+        const meta = { id: track.id, name: track.name, title: track.title, artist: track.artist, album: track.album, size: blob.size, savedAt: Date.now() };
+        return [meta, ...current];
+      });
+      setStatus(`Downloaded “${track.title}” for offline use.`);
+    } catch (error) {
+      setStatus(`Download failed: ${error.message}`);
+    } finally {
+      setDownloadingIds((current) => {
+        const next = new Set(current);
+        next.delete(track.id);
+        return next;
+      });
+    }
+  };
+
+  const handleRemoveDownload = async (track) => {
+    try {
+      await deleteTrack(track.id);
+    } catch (error) {
+      /* ignore */
+    }
+    setDownloadedIds((current) => {
+      const next = new Set(current);
+      next.delete(track.id);
+      return next;
+    });
+    setDownloadedTracks((current) => current.filter((item) => item.id !== track.id));
+    setStatus(`Removed “${track.title}” from offline downloads.`);
   };
 
   const walkDriveNode = async (route, token, onBatch, shouldStop) => {
@@ -406,36 +549,19 @@ function App() {
       return [track, ...withoutTrack].slice(0, 8);
     });
 
-    if (!objectUrlRef.current) {
-      setStatus(`Preparing ${track.title}...`);
+    const alreadyCached = blobUrlCacheRef.current.has(track.id);
+    if (!alreadyCached) {
+      setStatus(`Preparing ${track.title}…`);
     }
 
     try {
-      const token = await ensureAccessToken();
-      const response = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${track.id}/content`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Audio download failed with status ${response.status}`);
-      }
-
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-      }
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      objectUrlRef.current = objectUrl;
-
+      const objectUrl = await resolveObjectUrl(track);
       if (audioRef.current) {
         audioRef.current.src = objectUrl;
         audioRef.current.load();
         await audioRef.current.play();
         setIsPlaying(true);
       }
-
       setStatus(`Playing ${track.title}`);
       setDuration(audioRef.current?.duration || 0);
     } catch (error) {
@@ -461,7 +587,7 @@ function App() {
   };
 
   const playNext = () => {
-    const list = tracks.length ? tracks : queue;
+    const list = orderedTracksRef.current.length ? orderedTracksRef.current : tracks;
     if (!list.length) {
       return;
     }
@@ -473,7 +599,7 @@ function App() {
   };
 
   const playPrevious = () => {
-    const list = tracks.length ? tracks : queue;
+    const list = orderedTracksRef.current.length ? orderedTracksRef.current : tracks;
     if (!list.length) {
       return;
     }
@@ -512,6 +638,72 @@ function App() {
       audioRef.current.volume = value;
     }
   };
+
+  const handleSheetPointerDown = (event) => {
+    dragStartRef.current = { y: event.clientY, time: Date.now() };
+    setIsDragging(true);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch (captureError) {
+      /* pointer capture is best-effort */
+    }
+  };
+
+  const handleSheetPointerMove = (event) => {
+    if (!dragStartRef.current) {
+      return;
+    }
+    const delta = event.clientY - dragStartRef.current.y;
+    setDragY(delta > 0 ? delta : delta * 0.2);
+  };
+
+  const handleSheetPointerUp = (event) => {
+    if (!dragStartRef.current) {
+      return;
+    }
+    const delta = event.clientY - dragStartRef.current.y;
+    const elapsed = Date.now() - dragStartRef.current.time;
+    const velocity = delta / Math.max(elapsed, 1);
+    dragStartRef.current = null;
+    setIsDragging(false);
+    if (delta > 140 || velocity > 0.55) {
+      setNowPlayingOpen(false);
+    }
+    setDragY(0);
+  };
+
+  useEffect(() => {
+    if (!activeTrackId) {
+      return undefined;
+    }
+    const list = orderedTracks;
+    const index = list.findIndex((track) => track.id === activeTrackId);
+    if (index === -1) {
+      return undefined;
+    }
+    const windowIds = new Set();
+    for (let offset = -2; offset <= 2; offset += 1) {
+      const track = list[index + offset];
+      if (track) {
+        windowIds.add(track.id);
+      }
+    }
+    windowIds.forEach((id) => {
+      if (!blobUrlCacheRef.current.has(id)) {
+        const track = list.find((item) => item.id === id);
+        if (track) {
+          resolveObjectUrl(track).catch(() => {});
+        }
+      }
+    });
+    blobUrlCacheRef.current.forEach((url, id) => {
+      if (!windowIds.has(id)) {
+        URL.revokeObjectURL(url);
+        blobUrlCacheRef.current.delete(id);
+      }
+    });
+    return undefined;
+  }, [activeTrackId, orderedTracks]);
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) {
@@ -573,6 +765,45 @@ function App() {
 
     return undefined;
   }, [activeTrack, isPlaying, tracks]);
+
+  const renderTrackRow = (track, index) => {
+    const isActive = activeTrack?.id === track.id;
+    const isDownloaded = downloadedIds.has(track.id);
+    const isDownloading = downloadingIds.has(track.id);
+    return (
+      <li key={track.id} className={`track ${isActive ? 'track--active' : ''}`} style={{ '--row': index % 12 }}>
+        <button className="track__main" type="button" onClick={() => handleTrackSelect(track)}>
+          <span className="track__art">
+            <AlbumArt seed={track.id} playing={isActive && isPlaying} />
+            <span className="track__overlay" aria-hidden="true">
+              {isActive && isPlaying ? (
+                <span className="track__eq"><i /><i /><i /></span>
+              ) : (
+                <span className="track__play"><IconPlay size={18} /></span>
+              )}
+            </span>
+          </span>
+          <span className="track__meta">
+            <span className="track__title">{track.title}</span>
+            <span className="track__sub">{track.artist} • {track.album}</span>
+          </span>
+        </button>
+        <div className="track__actions">
+          {isDownloaded ? (
+            <button className="icon-btn icon-btn--sm is-downloaded" type="button" onClick={() => handleRemoveDownload(track)} aria-label="Remove download" title="Saved offline — tap to remove">
+              <IconCheck size={16} />
+            </button>
+          ) : isDownloading ? (
+            <span className="icon-btn icon-btn--sm" aria-label="Downloading" title="Downloading…"><IconSpinner size={16} className="is-spinning" /></span>
+          ) : (
+            <button className="icon-btn icon-btn--sm" type="button" onClick={() => handleDownload(track)} aria-label="Download for offline" title="Download for offline">
+              <IconDownload size={16} />
+            </button>
+          )}
+        </div>
+      </li>
+    );
+  };
 
   return (
     <div className={`app ${isNowPlayingOpen ? 'app--locked' : ''}`}>
@@ -662,9 +893,9 @@ function App() {
             <section className="library">
               <div className="library__head">
                 <h2 className="library__title">
-                  {isLoading ? 'Scanning…' : tracks.length ? `${tracks.length} track${tracks.length === 1 ? '' : 's'}` : 'Your library'}
+                  {isLoading ? 'Scanning…' : viewMode === 'downloaded' ? 'Offline' : tracks.length ? `${tracks.length} track${tracks.length === 1 ? '' : 's'}` : 'Your library'}
                 </h2>
-                {tracks.length > 0 ? (
+                {tracks.length > 0 || downloadedTracks.length > 0 ? (
                   <div className="search">
                     <span className="search__icon" aria-hidden="true"><IconSearch size={16} /></span>
                     <input className="search__input" type="search" value={searchTerm} placeholder="Search" aria-label="Search tracks" onChange={(event) => setSearchTerm(event.target.value)} />
@@ -672,34 +903,69 @@ function App() {
                 ) : null}
               </div>
 
-              {visibleTracks.length > 0 ? (
+              {tracks.length > 0 || downloadedTracks.length > 0 ? (
+                <div className="view-switch" role="tablist" aria-label="Library views">
+                  <button role="tab" aria-selected={viewMode === 'songs'} className={`view-switch__btn ${viewMode === 'songs' ? 'is-active' : ''}`} type="button" onClick={() => setViewMode('songs')}>
+                    <IconList size={16} /><span>Songs</span>
+                  </button>
+                  <button role="tab" aria-selected={viewMode === 'albums'} className={`view-switch__btn ${viewMode === 'albums' ? 'is-active' : ''}`} type="button" onClick={() => setViewMode('albums')}>
+                    <IconAlbum size={16} /><span>Albums</span>
+                  </button>
+                  <button role="tab" aria-selected={viewMode === 'downloaded'} className={`view-switch__btn ${viewMode === 'downloaded' ? 'is-active' : ''}`} type="button" onClick={() => setViewMode('downloaded')}>
+                    <IconDownload size={16} /><span>Offline{downloadedTracks.length ? ` · ${downloadedTracks.length}` : ''}</span>
+                  </button>
+                </div>
+              ) : null}
+
+              {viewMode === 'downloaded' ? (
+                visibleDownloaded.length > 0 ? (
+                  <ul className="track-list">
+                    {visibleDownloaded.map(renderTrackRow)}
+                  </ul>
+                ) : (
+                  <div className="placeholder">
+                    <AlbumArt seed="offline-empty" className="placeholder__art" />
+                    <p>No downloaded music yet. Tap the download icon on any track to save it for offline — it stays available after you close the tab.</p>
+                  </div>
+                )
+              ) : viewMode === 'albums' ? (
+                albumGroups.length > 0 ? (
+                  <div className="album-groups">
+                    {isLoading ? (
+                      <div className="scan-banner">Still scanning {folderLabel(folderPath)} — tap any track to play now.</div>
+                    ) : null}
+                    {albumGroups.map((group) => (
+                      <section className="album-group" key={group.album}>
+                        <div className="album-group__head">
+                          <span className="album-group__art"><AlbumArt seed={group.tracks[0].id} /></span>
+                          <div className="album-group__meta">
+                            <span className="album-group__title">{group.album}</span>
+                            <span className="album-group__count">{group.tracks.length} track{group.tracks.length === 1 ? '' : 's'}</span>
+                          </div>
+                        </div>
+                        <ul className="track-list">
+                          {group.tracks.map(renderTrackRow)}
+                        </ul>
+                      </section>
+                    ))}
+                  </div>
+                ) : isLoading ? (
+                  <div className="placeholder">
+                    <div className="placeholder__spinner" aria-hidden="true" />
+                    <p>Scanning {folderLabel(folderPath)} for audio files…</p>
+                  </div>
+                ) : (
+                  <div className="placeholder">
+                    <AlbumArt seed="empty-state" className="placeholder__art" />
+                    <p>No tracks yet. Enter a folder under “My files” and hit Sync.</p>
+                  </div>
+                )
+              ) : visibleTracks.length > 0 ? (
                 <ul className="track-list">
                   {isLoading ? (
                     <li className="scan-banner">Still scanning {folderLabel(folderPath)} — tap any track to play now.</li>
                   ) : null}
-                  {visibleTracks.map((track, index) => {
-                    const isActive = activeTrack?.id === track.id;
-                    return (
-                      <li key={track.id} className={`track ${isActive ? 'track--active' : ''}`} style={{ '--row': index % 12 }}>
-                        <button className="track__main" type="button" onClick={() => handleTrackSelect(track)}>
-                          <span className="track__art">
-                            <AlbumArt seed={track.id} playing={isActive && isPlaying} />
-                            <span className="track__overlay" aria-hidden="true">
-                              {isActive && isPlaying ? (
-                                <span className="track__eq"><i /><i /><i /></span>
-                              ) : (
-                                <span className="track__play"><IconPlay size={18} /></span>
-                              )}
-                            </span>
-                          </span>
-                          <span className="track__meta">
-                            <span className="track__title">{track.title}</span>
-                            <span className="track__sub">{track.artist} • {track.album}</span>
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
+                  {visibleTracks.map(renderTrackRow)}
                 </ul>
               ) : isLoading ? (
                 <div className="placeholder">
@@ -744,12 +1010,27 @@ function App() {
       ) : null}
 
       {activeTrack ? (
-        <div className={`now-playing ${isNowPlayingOpen ? 'is-open' : ''}`} role="dialog" aria-modal="true" aria-label="Now playing" aria-hidden={!isNowPlayingOpen}>
-          <div className="now-playing__backdrop" onClick={() => setNowPlayingOpen(false)} />
-          <div className="now-playing__sheet">
-            <button className="now-playing__grip" type="button" onClick={() => setNowPlayingOpen(false)} aria-label="Close now playing" />
-            <div className="now-playing__art-wrap">
-              <AlbumArt seed={activeTrack.id} playing={isPlaying} spin className="now-playing__art" />
+        <div className={`now-playing ${isNowPlayingOpen ? 'is-open' : ''} ${isDragging ? 'is-dragging' : ''}`} role="dialog" aria-modal="true" aria-label="Now playing" aria-hidden={!isNowPlayingOpen}>
+          <div
+            className="now-playing__backdrop"
+            style={dragY ? { opacity: Math.max(0, 1 - dragY / 480) } : undefined}
+            onClick={() => setNowPlayingOpen(false)}
+          />
+          <div
+            className="now-playing__sheet"
+            style={dragY ? { transform: `translateY(${dragY}px)`, transition: isDragging ? 'none' : undefined } : undefined}
+          >
+            <div
+              className="now-playing__handle"
+              onPointerDown={handleSheetPointerDown}
+              onPointerMove={handleSheetPointerMove}
+              onPointerUp={handleSheetPointerUp}
+              onPointerCancel={handleSheetPointerUp}
+            >
+              <button className="now-playing__grip" type="button" onClick={() => setNowPlayingOpen(false)} aria-label="Close now playing" />
+              <div className="now-playing__art-wrap">
+                <AlbumArt seed={activeTrack.id} playing={isPlaying} spin className="now-playing__art" />
+              </div>
             </div>
             <div className="now-playing__meta">
               <p className="eyebrow">Now playing</p>
@@ -784,6 +1065,21 @@ function App() {
               <input id="np-volume" type="range" min="0" max="1" step="0.01" value={volume} aria-label="Volume" onChange={handleVolumeChange} />
               <IconVolumeHigh size={18} />
             </label>
+            <div className="now-playing__foot">
+              {downloadedIds.has(activeTrack.id) ? (
+                <button className="btn btn--secondary btn--sm" type="button" onClick={() => handleRemoveDownload(activeTrack)}>
+                  <IconCheck size={16} /> Saved offline
+                </button>
+              ) : downloadingIds.has(activeTrack.id) ? (
+                <button className="btn btn--secondary btn--sm" type="button" disabled>
+                  <IconSpinner size={16} className="is-spinning" /> Downloading…
+                </button>
+              ) : (
+                <button className="btn btn--secondary btn--sm" type="button" onClick={() => handleDownload(activeTrack)}>
+                  <IconDownload size={16} /> Download
+                </button>
+              )}
+            </div>
           </div>
         </div>
       ) : null}
