@@ -664,10 +664,12 @@ function App() {
                 <h2 className="library__title">
                   {isLoading ? 'Scanning…' : tracks.length ? `${tracks.length} track${tracks.length === 1 ? '' : 's'}` : 'Your library'}
                 </h2>
-                <div className="search">
-                  <span className="search__icon" aria-hidden="true"><IconSearch size={16} /></span>
-                  <input className="search__input" type="search" value={searchTerm} placeholder="Search" aria-label="Search tracks" onChange={(event) => setSearchTerm(event.target.value)} />
-                </div>
+                {tracks.length > 0 ? (
+                  <div className="search">
+                    <span className="search__icon" aria-hidden="true"><IconSearch size={16} /></span>
+                    <input className="search__input" type="search" value={searchTerm} placeholder="Search" aria-label="Search tracks" onChange={(event) => setSearchTerm(event.target.value)} />
+                  </div>
+                ) : null}
               </div>
 
               {visibleTracks.length > 0 ? (
