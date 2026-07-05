@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionRequiredAuthError, PublicClientApplication } from '@azure/msal-browser';
 import AlbumArt, { artworkDataUrl } from './AlbumArt';
+import { IconMusic, IconSearch, IconPlay, IconPause, IconPrev, IconNext, IconVolumeLow, IconVolumeHigh } from './icons';
 
 const AUDIO_EXTENSIONS = new Set(['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'oga', 'opus', 'wma', 'mpeg', 'mp4', 'm4b', 'alac']);
 const SCOPES = ['User.Read', 'Files.Read.All', 'offline_access'];
@@ -577,7 +578,7 @@ function App() {
     <div className={`app ${isNowPlayingOpen ? 'app--locked' : ''}`}>
       <header className="app-header">
         <div className="brand">
-          <span className="brand__mark" aria-hidden="true">♫</span>
+          <span className="brand__mark" aria-hidden="true"><IconMusic size={22} /></span>
           <div className="brand__text">
             <span className="brand__eyebrow">Microsoft OneDrive</span>
             <h1 className="brand__title">OneMusic</h1>
@@ -664,7 +665,7 @@ function App() {
                   {isLoading ? 'Scanning…' : tracks.length ? `${tracks.length} track${tracks.length === 1 ? '' : 's'}` : 'Your library'}
                 </h2>
                 <div className="search">
-                  <span className="search__icon" aria-hidden="true">⌕</span>
+                  <span className="search__icon" aria-hidden="true"><IconSearch size={16} /></span>
                   <input className="search__input" type="search" value={searchTerm} placeholder="Search" aria-label="Search tracks" onChange={(event) => setSearchTerm(event.target.value)} />
                 </div>
               </div>
@@ -685,7 +686,7 @@ function App() {
                               {isActive && isPlaying ? (
                                 <span className="track__eq"><i /><i /><i /></span>
                               ) : (
-                                <span className="track__play">▶</span>
+                                <span className="track__play"><IconPlay size={18} /></span>
                               )}
                             </span>
                           </span>
@@ -733,9 +734,9 @@ function App() {
           </button>
           <div className="mini-player__controls">
             <button className="icon-btn" type="button" onClick={togglePlayback} aria-label={isPlaying ? 'Pause' : 'Play'}>
-              {isPlaying ? '❚❚' : '▶'}
+              {isPlaying ? <IconPause size={18} /> : <IconPlay size={18} />}
             </button>
-            <button className="icon-btn mini-player__next" type="button" onClick={playNext} aria-label="Next track">⏭</button>
+            <button className="icon-btn mini-player__next" type="button" onClick={playNext} aria-label="Next track"><IconNext size={20} /></button>
           </div>
         </div>
       ) : null}
@@ -770,16 +771,16 @@ function App() {
               </div>
             </div>
             <div className="transport">
-              <button className="icon-btn icon-btn--lg" type="button" onClick={playPrevious} aria-label="Previous track">⏮</button>
+              <button className="icon-btn icon-btn--lg" type="button" onClick={playPrevious} aria-label="Previous track"><IconPrev size={24} /></button>
               <button className="play-btn" type="button" onClick={togglePlayback} aria-label={isPlaying ? 'Pause' : 'Play'}>
-                {isPlaying ? '❚❚' : '▶'}
+                {isPlaying ? <IconPause size={26} /> : <IconPlay size={26} />}
               </button>
-              <button className="icon-btn icon-btn--lg" type="button" onClick={playNext} aria-label="Next track">⏭</button>
+              <button className="icon-btn icon-btn--lg" type="button" onClick={playNext} aria-label="Next track"><IconNext size={24} /></button>
             </div>
             <label className="volume" htmlFor="np-volume">
-              <span aria-hidden="true">🔈</span>
+              <IconVolumeLow size={18} />
               <input id="np-volume" type="range" min="0" max="1" step="0.01" value={volume} aria-label="Volume" onChange={handleVolumeChange} />
-              <span aria-hidden="true">🔊</span>
+              <IconVolumeHigh size={18} />
             </label>
           </div>
         </div>
