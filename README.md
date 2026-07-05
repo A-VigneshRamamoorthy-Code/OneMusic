@@ -1,17 +1,17 @@
 # OneMusic
 
-A polished React + Vite app for a music-first experience, styled with a design-system-inspired token palette and responsive layout.
+OneMusic is a polished React + Vite web app that signs in to Microsoft and streams audio files directly from OneDrive using Microsoft Graph.
 
-## Scripts
+## Run locally
 
 - `npm install`
 - `npm run dev`
-- `npm run build`
 
-## Notes
+## Connect OneDrive
 
-The app includes:
-- a cinematic hero section
-- animated player controls
-- library and playlist views
-- responsive cards and buttons
+Open the app with a Microsoft Entra app registration client ID:
+
+- `http://localhost:3000/?clientId=YOUR_APP_ID&tenant=common`
+- Or the deployed GitHub Pages URL with the same query parameters.
+
+The app requests the delegated scopes `User.Read`, `Files.Read.All`, and `offline_access` and uses silent token refresh when possible.
