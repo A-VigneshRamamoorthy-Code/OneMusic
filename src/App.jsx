@@ -3,6 +3,8 @@ import { InteractionRequiredAuthError, PublicClientApplication } from '@azure/ms
 
 const AUDIO_EXTENSIONS = new Set(['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'oga', 'opus', 'wma', 'mpeg', 'mp4', 'm4b', 'alac']);
 const SCOPES = ['User.Read', 'Files.Read.All', 'offline_access'];
+const DEFAULT_CLIENT_ID = '61ca244b-acb8-4bba-b3bf-9829b60d9981';
+const DEFAULT_TENANT_ID = '3ff6bc31-5c2f-4e94-86ea-8946fe39d617';
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) {
@@ -56,8 +58,8 @@ function App() {
   const config = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return {
-      clientId: params.get('clientId') || '',
-      tenant: params.get('tenant') || 'common',
+      clientId: params.get('clientId') || DEFAULT_CLIENT_ID,
+      tenant: params.get('tenant') || DEFAULT_TENANT_ID,
       redirectUri: params.get('redirectUri') || `${window.location.origin}${window.location.pathname}`,
     };
   }, []);
