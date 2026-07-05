@@ -25,6 +25,28 @@ function isAudioFile(name) {
   return Boolean(extension && AUDIO_EXTENSIONS.has(extension));
 }
 
+function normalizeFolderPath(rawPath) {
+  return (rawPath || '')
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/^my files\/?/i, '')
+    .replace(/^\/+|\/+$/g, '')
+    .trim();
+}
+
+function buildFolderRoute(rawPath) {
+  const clean = normalizeFolderPath(rawPath);
+  if (!clean) {
+    return '/me/drive/root/children';
+  }
+  const encoded = clean.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+  return `/me/drive/root:/${encoded}:/children`;
+}
+
+function folderLabel(rawPath) {
+  const clean = normalizeFolderPath(rawPath);
+  return clean ? `My files/${clean}` : 'My files';
+}
+
 function buildTrackMetadata(item) {
   const fileName = item.name.replace(/\.[^/.]+$/, '');
   const cleaned = fileName.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -49,6 +71,13 @@ function App() {
   const [queue, setQueue] = useState([]);
   const [activeTrackId, setActiveTrackId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [folderPath, setFolderPath] = useState(() => {
+    try {
+      return localStorage.getItem('onemusic.folderPath') || '';
+    } catch (storageError) {
+      return '';
+    }
+  });
   const [status, setStatus] = useState('Sign in with Microsoft to browse your OneDrive music library.');
   const [authState, setAuthState] = useState('idle');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -111,9 +140,9 @@ function App() {
         if (activeAccount) {
           instance.setActiveAccount(activeAccount);
           setAccount(activeAccount);
-          setStatus(`Signed in as ${activeAccount.username}.`);
+          setStatus(`Signed in as ${activeAccount.username}. Enter a folder under "My files" and hit Sync.`);
           setAuthState('ready');
-          await loadTracks(instance, activeAccount);
+          setIsLoading(false);
         } else {
           setAuthState('ready');
           setStatus('Sign in with Microsoft to browse your OneDrive music library.');
@@ -207,28 +236,49 @@ function App() {
     }
   };
 
-  const loadTracks = async (instance, accountToUse = account) => {
+  const loadTracks = async (instance, accountToUse = account, rawPath = folderPath) => {
     if (!instance || !accountToUse) {
       return;
     }
+    const label = folderLabel(rawPath);
     setIsLoading(true);
+    setStatus(`Scanning ${label} for audio files…`);
     try {
       const token = await ensureAccessToken(accountToUse);
       const discovered = [];
-      await walkDriveNode('/me/drive/root/children', discovered, token);
+      await walkDriveNode(buildFolderRoute(rawPath), discovered, token);
       const sorted = discovered.sort((left, right) => left.title.localeCompare(right.title));
       setTracks(sorted);
       setQueue(sorted.slice(0, Math.min(8, sorted.length)));
-      if (!activeTrackId && sorted.length) {
-        setActiveTrackId(sorted[0].id);
-      }
-      setStatus(`Loaded ${sorted.length} audio file${sorted.length === 1 ? '' : 's'} from OneDrive.`);
+      setActiveTrackId((current) => current || (sorted.length ? sorted[0].id : null));
+      setStatus(
+        sorted.length
+          ? `Loaded ${sorted.length} audio file${sorted.length === 1 ? '' : 's'} from ${label}.`
+          : `No audio files found in ${label}.`,
+      );
     } catch (error) {
-      setStatus(`OneDrive sync failed: ${error.message}`);
-      setAuthState('error');
+      setTracks([]);
+      setStatus(`Sync failed for ${label}: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSync = async () => {
+    if (!account) {
+      setStatus('Please sign in with Microsoft first.');
+      return;
+    }
+    const clean = normalizeFolderPath(folderPath);
+    if (clean !== folderPath) {
+      setFolderPath(clean);
+    }
+    try {
+      localStorage.setItem('onemusic.folderPath', clean);
+    } catch (storageError) {
+      /* ignore storage failures */
+    }
+    await loadTracks(msalRef.current, account, clean);
   };
 
   const handleSignIn = async () => {
@@ -268,7 +318,7 @@ function App() {
     if (!account) {
       return;
     }
-    await loadTracks(msalRef.current, account);
+    await loadTracks(msalRef.current, account, folderPath);
   };
 
   const handleTrackSelect = async (track) => {
@@ -410,6 +460,33 @@ function App() {
                 <p className="text-lead">Set <code>?clientId=YOUR_APP_ID</code> and optionally <code>&tenant=common</code> before signing in.</p>
               )}
             </div>
+            {account ? (
+              <div className="folder-card" aria-live="polite">
+                <p className="section-label">Folder to sync</p>
+                <div className="folder-input-row">
+                  <span className="folder-prefix">My files /</span>
+                  <input
+                    className="search-input folder-input"
+                    type="text"
+                    value={folderPath}
+                    placeholder="Music/Melody"
+                    aria-label="Folder path under My files"
+                    onChange={(event) => setFolderPath(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        handleSync();
+                      }
+                    }}
+                  />
+                  <button className="button brand" type="button" onClick={handleSync} disabled={isLoading}>
+                    {isLoading ? 'Syncing…' : 'Sync'}
+                  </button>
+                </div>
+                <p className="text-lead folder-hint">
+                  Only this folder (and its subfolders) is scanned. Leave blank to scan all of OneDrive (slower).
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <div className="hero-preview">
@@ -454,15 +531,19 @@ function App() {
             <div className="panel-head">
               <div>
                 <p className="section-label">OneDrive library</p>
-                <h3>{isLoading ? 'Scanning your music…' : 'Browse the tracks'}</h3>
+                <h3>{isLoading ? 'Scanning…' : tracks.length ? 'Browse the tracks' : 'Ready to sync'}</h3>
               </div>
               <input className="search-input" type="search" value={searchTerm} placeholder="Search tracks" onChange={(event) => setSearchTerm(event.target.value)} />
             </div>
 
             {isLoading ? (
-              <div className="empty-state">Scanning your OneDrive storage for audio files…</div>
+              <div className="empty-state">Scanning {folderLabel(folderPath)} for audio files…</div>
             ) : visibleTracks.length === 0 ? (
-              <div className="empty-state">No audio files matched your search. Try signing in and refreshing the library.</div>
+              <div className="empty-state">
+                {account
+                  ? 'No tracks yet. Enter a folder under “My files” above and hit Sync.'
+                  : 'Sign in with Microsoft, then choose a folder to sync.'}
+              </div>
             ) : (
               <div className="track-list" role="list">
                 {visibleTracks.map((track) => (
