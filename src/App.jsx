@@ -4,7 +4,11 @@ import { InteractionRequiredAuthError, PublicClientApplication } from '@azure/ms
 const AUDIO_EXTENSIONS = new Set(['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'oga', 'opus', 'wma', 'mpeg', 'mp4', 'm4b', 'alac']);
 const SCOPES = ['User.Read', 'Files.Read.All', 'offline_access'];
 const DEFAULT_CLIENT_ID = '61ca244b-acb8-4bba-b3bf-9829b60d9981';
-const DEFAULT_TENANT_ID = '3ff6bc31-5c2f-4e94-86ea-8946fe39d617';
+// Use the multi-tenant "common" endpoint so personal Microsoft accounts resolve to
+// their own consumer OneDrive. The org tenant 3ff6bc31-5c2f-4e94-86ea-8946fe39d617
+// has no SharePoint/OneDrive (SPO) license, so /me/drive fails there ("Tenant does
+// not have a SPO license."). Override with ?tenant=<id> if you need a specific tenant.
+const DEFAULT_TENANT_ID = 'common';
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) {
@@ -167,26 +171,39 @@ function App() {
   };
 
   const walkDriveNode = async (route, items, token) => {
-    const response = await fetch(`https://graph.microsoft.com/v1.0${route}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    let url = route.startsWith('http') ? route : `https://graph.microsoft.com/v1.0${route}`;
+    while (url) {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(`OneDrive scan failed with status ${response.status}`);
-    }
-
-    const payload = await response.json();
-    const children = payload.value || [];
-
-    for (const child of children) {
-      if (child.folder) {
-        await walkDriveNode(`/me/drive/items/${child.id}/children`, items, token);
-      } else if (isAudioFile(child.name)) {
-        items.push(buildTrackMetadata(child));
+      if (!response.ok) {
+        let detail = `status ${response.status}`;
+        try {
+          const errorBody = await response.json();
+          if (errorBody?.error?.message) {
+            detail = errorBody.error.message;
+          }
+        } catch (parseError) {
+          /* fall back to the status-based detail */
+        }
+        throw new Error(`OneDrive scan failed: ${detail}`);
       }
+
+      const payload = await response.json();
+      const children = payload.value || [];
+
+      for (const child of children) {
+        if (child.folder) {
+          await walkDriveNode(`/me/drive/items/${child.id}/children`, items, token);
+        } else if (isAudioFile(child.name)) {
+          items.push(buildTrackMetadata(child));
+        }
+      }
+
+      url = payload['@odata.nextLink'] || '';
     }
   };
 
