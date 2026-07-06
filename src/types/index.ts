@@ -29,6 +29,9 @@ export interface AlbumGroup {
 
 export type ViewMode = 'songs' | 'albums' | 'downloaded';
 
+/** A selectable item in the dock: the three library views plus the Settings page. */
+export type DockTab = ViewMode | 'settings';
+
 export type AuthState = 'idle' | 'config' | 'ready' | 'error';
 
 /** Microsoft Graph `audio` facet: ID3-derived metadata for audio driveItems. */

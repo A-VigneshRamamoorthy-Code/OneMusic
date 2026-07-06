@@ -1,28 +1,28 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { IconAlbum, IconClose, IconDownload, IconHome, IconSearch, IconSettings } from '../Icon';
-import type { ViewMode } from '../../types';
+import type { DockTab } from '../../types';
 import type { TabBarProps } from './TabBar.types';
 import * as S from './TabBar.style';
 
 /**
  * Floating dock of equally sized, evenly spaced icons: Home (the songs/library view),
- * Albums, Offline, Settings and Search. A highlight pill slides to the active view.
- * Tapping Search swaps the icons for a search field with a Close button.
+ * Albums, Offline, Settings and Search. A highlight pill slides to the active tab
+ * (including the Settings page). Tapping Search swaps the icons for a search field.
  */
 export function TabBar({
   hasLibraryContent,
-  viewMode,
+  activeTab,
   onViewModeChange,
+  onOpenSettings,
   searchTerm,
   onSearchChange,
   onHome,
-  onOpenSettings,
 }: TabBarProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
-  const viewRefs = useRef<Partial<Record<ViewMode, HTMLButtonElement | null>>>({});
+  const tabRefs = useRef<Partial<Record<DockTab, HTMLButtonElement | null>>>({});
 
   const openSearch = () => {
     setIsSearchOpen(true);
@@ -46,14 +46,14 @@ export function TabBar({
   // the element's own transform/width lets the CSS transition run without a React churn).
   const positionIndicator = useCallback(() => {
     const indicator = indicatorRef.current;
-    const button = viewRefs.current[viewMode];
+    const button = tabRefs.current[activeTab];
     if (!indicator || !button) {
       return;
     }
     indicator.style.width = `${button.offsetWidth}px`;
     indicator.style.transform = `translateX(${button.offsetLeft}px)`;
     indicator.style.opacity = '1';
-  }, [viewMode]);
+  }, [activeTab]);
 
   useLayoutEffect(() => {
     positionIndicator();
@@ -93,16 +93,16 @@ export function TabBar({
 
   return (
     <S.Bar>
-      {hasLibraryContent ? <S.Indicator ref={indicatorRef} aria-hidden="true" /> : null}
+      <S.Indicator ref={indicatorRef} aria-hidden="true" />
 
       <S.IconBtn
         ref={(element) => {
-          viewRefs.current.songs = element;
+          tabRefs.current.songs = element;
         }}
         type="button"
-        $active={viewMode === 'songs'}
+        $active={activeTab === 'songs'}
         aria-label="Home"
-        aria-pressed={viewMode === 'songs'}
+        aria-pressed={activeTab === 'songs'}
         onClick={onHome}
       >
         <IconHome size={26} />
@@ -112,24 +112,24 @@ export function TabBar({
         <>
           <S.IconBtn
             ref={(element) => {
-              viewRefs.current.albums = element;
+              tabRefs.current.albums = element;
             }}
             type="button"
-            $active={viewMode === 'albums'}
+            $active={activeTab === 'albums'}
             aria-label="Albums"
-            aria-pressed={viewMode === 'albums'}
+            aria-pressed={activeTab === 'albums'}
             onClick={() => onViewModeChange('albums')}
           >
             <IconAlbum size={26} />
           </S.IconBtn>
           <S.IconBtn
             ref={(element) => {
-              viewRefs.current.downloaded = element;
+              tabRefs.current.downloaded = element;
             }}
             type="button"
-            $active={viewMode === 'downloaded'}
+            $active={activeTab === 'downloaded'}
             aria-label="Offline"
-            aria-pressed={viewMode === 'downloaded'}
+            aria-pressed={activeTab === 'downloaded'}
             onClick={() => onViewModeChange('downloaded')}
           >
             <IconDownload size={26} />
@@ -137,7 +137,16 @@ export function TabBar({
         </>
       ) : null}
 
-      <S.IconBtn type="button" onClick={onOpenSettings} aria-label="Settings">
+      <S.IconBtn
+        ref={(element) => {
+          tabRefs.current.settings = element;
+        }}
+        type="button"
+        $active={activeTab === 'settings'}
+        aria-label="Settings"
+        aria-pressed={activeTab === 'settings'}
+        onClick={onOpenSettings}
+      >
         <IconSettings size={26} />
       </S.IconBtn>
 

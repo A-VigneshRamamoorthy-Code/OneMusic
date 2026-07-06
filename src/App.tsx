@@ -22,7 +22,7 @@ export default function App() {
   const [status, setStatus] = useState('Sign in with Microsoft to browse your OneDrive music library.');
   const [isLoading, setIsLoading] = useState(true);
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
-  const [isSettingsOpen, setSettingsOpen] = useState(false);
+  const [page, setPage] = useState<'library' | 'settings'>('library');
 
   const theme = useTheme();
   const auth = useAuth({ setStatus, setIsLoading });
@@ -66,20 +66,34 @@ export default function App() {
   const hasLibraryContent = library.tracks.length > 0 || downloads.downloadedTracks.length > 0;
 
   const handleSignOut = useCallback(async () => {
-    setSettingsOpen(false);
+    setPage('library');
     library.reset();
     player.reset();
     await auth.signOut();
   }, [auth, library, player]);
 
   const handleHome = useCallback(() => {
+    setPage('library');
     library.setViewMode('songs');
     sheet.close();
-    setSettingsOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [library, sheet]);
 
-  // Close settings automatically once a user-triggered sync starts streaming tracks.
+  const handleSelectView = useCallback(
+    (mode: 'songs' | 'albums' | 'downloaded') => {
+      setPage('library');
+      library.setViewMode(mode);
+    },
+    [library],
+  );
+
+  const handleOpenSettings = useCallback(() => {
+    setPage('settings');
+    sheet.close();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [sheet]);
+
+  // Return to the library automatically once a user-triggered sync starts streaming tracks.
   const pendingSyncCloseRef = useRef(false);
   const handleSync = useCallback(() => {
     pendingSyncCloseRef.current = true;
@@ -89,11 +103,11 @@ export default function App() {
   useEffect(() => {
     if (pendingSyncCloseRef.current && library.tracks.length > 0) {
       pendingSyncCloseRef.current = false;
-      setSettingsOpen(false);
+      setPage('library');
     }
   }, [library.tracks.length]);
 
-  // On first sign-in with an empty library, open Settings so the user can pick a folder.
+  // On first sign-in with an empty library, show the Settings page so the user can pick a folder.
   const autoOpenedRef = useRef(false);
   useEffect(() => {
     if (!account) {
@@ -102,7 +116,7 @@ export default function App() {
     }
     if (!autoOpenedRef.current && !isLoading && !hasLibraryContent) {
       autoOpenedRef.current = true;
-      setSettingsOpen(true);
+      setPage('settings');
     }
   }, [account, isLoading, hasLibraryContent]);
 
@@ -123,6 +137,20 @@ export default function App() {
         <S.Main>
           {!account ? (
             <Hero authState={auth.authState} status={status} onSignIn={auth.signIn} />
+          ) : page === 'settings' ? (
+            <Settings
+              account={account}
+              folderPath={library.folderPath}
+              isLoading={isLoading}
+              status={status}
+              onFolderPathChange={library.setFolderPath}
+              onSync={handleSync}
+              onRefresh={library.refresh}
+              accents={theme.accents}
+              accentId={theme.accentId}
+              onSelectAccent={theme.setAccent}
+              onSignOut={handleSignOut}
+            />
           ) : (
             <Library
               isLoading={isLoading}
@@ -158,32 +186,14 @@ export default function App() {
             ) : null}
             <TabBar
               hasLibraryContent={hasLibraryContent}
-              viewMode={library.viewMode}
-              onViewModeChange={library.setViewMode}
+              activeTab={page === 'settings' ? 'settings' : library.viewMode}
+              onViewModeChange={handleSelectView}
+              onOpenSettings={handleOpenSettings}
               searchTerm={library.searchTerm}
               onSearchChange={library.setSearchTerm}
               onHome={handleHome}
-              onOpenSettings={() => setSettingsOpen(true)}
             />
           </Dock>
-        ) : null}
-
-        {account ? (
-          <Settings
-            isOpen={isSettingsOpen}
-            onClose={() => setSettingsOpen(false)}
-            account={account}
-            folderPath={library.folderPath}
-            isLoading={isLoading}
-            status={status}
-            onFolderPathChange={library.setFolderPath}
-            onSync={handleSync}
-            onRefresh={library.refresh}
-            accents={theme.accents}
-            accentId={theme.accentId}
-            onSelectAccent={theme.setAccent}
-            onSignOut={handleSignOut}
-          />
         ) : null}
 
         {activeTrack ? (
