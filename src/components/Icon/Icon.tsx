@@ -1,6 +1,8 @@
+import type { IconBaseProps, IconProps } from './Icon.types';
+
 // Modern, Lucide-style SVG icons used across the player UI.
 
-function Stroke({ size = 20, className, children }) {
+function Stroke({ size = 20, className, children }: IconBaseProps) {
   return (
     <svg
       className={className}
@@ -20,7 +22,7 @@ function Stroke({ size = 20, className, children }) {
   );
 }
 
-function Filled({ size = 20, className, children }) {
+function Filled({ size = 20, className, children }: IconBaseProps) {
   return (
     <svg
       className={className}
@@ -36,7 +38,7 @@ function Filled({ size = 20, className, children }) {
   );
 }
 
-export function IconMusic({ size, className }) {
+export function IconMusic({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <path d="M9 18V5l12-2v13" />
@@ -46,7 +48,7 @@ export function IconMusic({ size, className }) {
   );
 }
 
-export function IconSearch({ size, className }) {
+export function IconSearch({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <circle cx="11" cy="11" r="8" />
@@ -55,7 +57,7 @@ export function IconSearch({ size, className }) {
   );
 }
 
-export function IconPlay({ size, className }) {
+export function IconPlay({ size, className }: IconProps) {
   return (
     <Filled size={size} className={className}>
       <path d="M7 4.5v15a1 1 0 0 0 1.52.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
@@ -63,7 +65,7 @@ export function IconPlay({ size, className }) {
   );
 }
 
-export function IconPause({ size, className }) {
+export function IconPause({ size, className }: IconProps) {
   return (
     <Filled size={size} className={className}>
       <rect x="6.5" y="5" width="3.6" height="14" rx="1.3" />
@@ -72,7 +74,7 @@ export function IconPause({ size, className }) {
   );
 }
 
-export function IconPrev({ size, className }) {
+export function IconPrev({ size, className }: IconProps) {
   return (
     <Filled size={size} className={className}>
       <path d="M18 5.2v13.6a1 1 0 0 1-1.55.83L7 13v5a1 1 0 0 1-2 0V6a1 1 0 0 1 2 0v5l9.45-6.63A1 1 0 0 1 18 5.2Z" />
@@ -80,7 +82,7 @@ export function IconPrev({ size, className }) {
   );
 }
 
-export function IconNext({ size, className }) {
+export function IconNext({ size, className }: IconProps) {
   return (
     <Filled size={size} className={className}>
       <path d="M6 5.2v13.6a1 1 0 0 0 1.55.83L17 13v5a1 1 0 0 0 2 0V6a1 1 0 0 0-2 0v5L7.55 4.37A1 1 0 0 0 6 5.2Z" />
@@ -88,7 +90,7 @@ export function IconNext({ size, className }) {
   );
 }
 
-export function IconVolumeLow({ size, className }) {
+export function IconVolumeLow({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <path d="M11 5 6 9H2v6h4l5 4z" />
@@ -97,7 +99,7 @@ export function IconVolumeLow({ size, className }) {
   );
 }
 
-export function IconVolumeHigh({ size, className }) {
+export function IconVolumeHigh({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <path d="M11 5 6 9H2v6h4l5 4z" />
@@ -107,7 +109,7 @@ export function IconVolumeHigh({ size, className }) {
   );
 }
 
-export function IconDownload({ size, className }) {
+export function IconDownload({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <path d="M12 3v12" />
@@ -117,7 +119,7 @@ export function IconDownload({ size, className }) {
   );
 }
 
-export function IconCheck({ size, className }) {
+export function IconCheck({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <path d="M20 6 9 17l-5-5" />
@@ -125,7 +127,7 @@ export function IconCheck({ size, className }) {
   );
 }
 
-export function IconTrash({ size, className }) {
+export function IconTrash({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <path d="M3 6h18" />
@@ -136,7 +138,7 @@ export function IconTrash({ size, className }) {
   );
 }
 
-export function IconSpinner({ size, className }) {
+export function IconSpinner({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
@@ -144,7 +146,7 @@ export function IconSpinner({ size, className }) {
   );
 }
 
-export function IconList({ size, className }) {
+export function IconList({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <path d="M8 6h13M8 12h13M8 18h13" />
@@ -153,7 +155,7 @@ export function IconList({ size, className }) {
   );
 }
 
-export function IconAlbum({ size, className }) {
+export function IconAlbum({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <circle cx="12" cy="12" r="9" />
@@ -162,7 +164,7 @@ export function IconAlbum({ size, className }) {
   );
 }
 
-export function IconHome({ size, className }) {
+export function IconHome({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <path d="M3 10.5 12 3l9 7.5" />
@@ -171,12 +173,49 @@ export function IconHome({ size, className }) {
   );
 }
 
-export function IconMic({ size, className }) {
+export function IconMic({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>
       <rect x="9" y="2" width="6" height="12" rx="3" />
       <path d="M5 11a7 7 0 0 0 14 0" />
       <path d="M12 18v3" />
+    </Stroke>
+  );
+}
+
+export function IconFolder({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    </Stroke>
+  );
+}
+
+export function IconRefresh({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+      <path d="M21 21v-5h-5" />
+    </Stroke>
+  );
+}
+
+export function IconSignOut({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </Stroke>
+  );
+}
+
+export function IconChevronUp({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <polyline points="18 15 12 9 6 15" />
     </Stroke>
   );
 }

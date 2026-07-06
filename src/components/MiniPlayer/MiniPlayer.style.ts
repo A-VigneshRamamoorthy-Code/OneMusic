@@ -1,0 +1,101 @@
+import styled from 'styled-components';
+import { rise } from '../../styles/keyframes';
+
+export const Player = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-default);
+  background: var(--neutral-primary-soft);
+  background: color-mix(in srgb, var(--neutral-primary-soft) 66%, transparent);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  backdrop-filter: blur(28px) saturate(1.6);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: ${rise} var(--dur) var(--ease-out) both;
+`;
+
+export const Bar = styled.span`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--neutral-secondary-medium);
+`;
+
+export const BarFill = styled.span`
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-strong));
+  transition: width 200ms linear;
+`;
+
+export const Art = styled.span`
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-default);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+`;
+
+export const Meta = styled.span`
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const Title = styled.span`
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+export const Sub = styled.span`
+  font-size: 12px;
+  color: var(--body-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+export const Expand = styled.span`
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  color: var(--body-subtle);
+  padding: 0 2px;
+`;
+
+export const Open = styled.button`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px;
+  border-radius: var(--radius-default);
+  text-align: left;
+  transition: background var(--dur-quick);
+
+  &:hover {
+    background: var(--neutral-secondary-medium);
+  }
+  &:hover ${Expand} {
+    color: var(--fg-brand);
+  }
+`;
+
+export const Controls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+`;

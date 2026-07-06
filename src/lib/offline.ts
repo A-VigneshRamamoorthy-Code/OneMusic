@@ -1,3 +1,5 @@
+import type { DownloadedTrackMeta, Track } from '../types';
+
 // IndexedDB-backed offline store for downloaded tracks. Blobs persist across
 // reloads and tab closes so downloaded music is available offline.
 
@@ -5,7 +7,11 @@ const DB_NAME = 'onemusic';
 const STORE = 'tracks';
 const VERSION = 1;
 
-function openDB() {
+interface StoredTrack extends DownloadedTrackMeta {
+  blob: Blob;
+}
+
+function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
       reject(new Error('IndexedDB is not available'));
@@ -23,12 +29,12 @@ function openDB() {
   });
 }
 
-export async function saveTrack(track, blob) {
+export async function saveTrack(track: Track, blob: Blob): Promise<boolean> {
   const db = await openDB();
   try {
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put({
+      const record: StoredTrack = {
         id: track.id,
         name: track.name,
         title: track.title,
@@ -38,7 +44,8 @@ export async function saveTrack(track, blob) {
         size: blob.size,
         blob,
         savedAt: Date.now(),
-      });
+      };
+      tx.objectStore(STORE).put(record);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error);
@@ -49,30 +56,15 @@ export async function saveTrack(track, blob) {
   return true;
 }
 
-export async function getTrackBlob(id) {
+export async function getTrackBlob(id: string): Promise<Blob | null> {
   const db = await openDB();
   try {
-    return await new Promise((resolve, reject) => {
+    return await new Promise<Blob | null>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readonly');
       const request = tx.objectStore(STORE).get(id);
-      request.onsuccess = () => resolve(request.result ? request.result.blob : null);
-      request.onerror = () => reject(request.error);
-    });
-  } finally {
-    db.close();
-  }
-}
-
-export async function listTracks() {
-  const db = await openDB();
-  try {
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readonly');
-      const request = tx.objectStore(STORE).getAll();
       request.onsuccess = () => {
-        const rows = request.result || [];
-        // Strip the blob so we don't hold every audio file in memory.
-        resolve(rows.map(({ blob, ...meta }) => meta).sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0)));
+        const result = request.result as StoredTrack | undefined;
+        resolve(result ? result.blob : null);
       };
       request.onerror = () => reject(request.error);
     });
@@ -81,10 +73,39 @@ export async function listTracks() {
   }
 }
 
-export async function deleteTrack(id) {
+export async function listTracks(): Promise<DownloadedTrackMeta[]> {
   const db = await openDB();
   try {
-    await new Promise((resolve, reject) => {
+    return await new Promise<DownloadedTrackMeta[]>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const request = tx.objectStore(STORE).getAll();
+      request.onsuccess = () => {
+        const rows = (request.result as StoredTrack[]) || [];
+        // Strip the blob so we don't hold every audio file in memory.
+        const meta: DownloadedTrackMeta[] = rows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          title: row.title,
+          artist: row.artist,
+          album: row.album,
+          mimeType: row.mimeType,
+          size: row.size,
+          savedAt: row.savedAt,
+        }));
+        meta.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+        resolve(meta);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export async function deleteTrack(id: string): Promise<boolean> {
+  const db = await openDB();
+  try {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).delete(id);
       tx.oncomplete = () => resolve();
