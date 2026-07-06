@@ -5,6 +5,14 @@ import type { DriveChildrenResponse, DriveItem, Track } from '../types';
 export type TrackBatchHandler = (batch: Track[]) => void;
 export type ShouldStop = () => boolean;
 
+// Request the audio facet (ID3 album/artist/title) plus the fields we need, and pull
+// large pages so scans finish in fewer round-trips.
+const CHILDREN_QUERY = '$select=id,name,folder,file,audio,parentReference&$top=200';
+
+function withChildrenQuery(route: string): string {
+  return route.includes('?') ? `${route}&${CHILDREN_QUERY}` : `${route}?${CHILDREN_QUERY}`;
+}
+
 /** Download the raw audio content for a track as a Blob. */
 export async function fetchTrackContent(trackId: string, token: string): Promise<Blob> {
   const response = await fetch(`${GRAPH_BASE}/me/drive/items/${trackId}/content`, {
@@ -30,7 +38,7 @@ export async function walkDriveNode(
   if (shouldStop()) {
     return;
   }
-  let url = route.startsWith('http') ? route : `${GRAPH_BASE}${route}`;
+  let url = route.startsWith('http') ? route : `${GRAPH_BASE}${withChildrenQuery(route)}`;
   while (url) {
     if (shouldStop()) {
       return;

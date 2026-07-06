@@ -83,7 +83,16 @@ export function useLibrary({
       }
     });
     return Array.from(map.entries())
-      .map(([album, items]) => ({ album, tracks: items }))
+      .map(([album, items]) => ({
+        album,
+        tracks: items
+          .slice()
+          .sort(
+            (left, right) =>
+              (left.trackNumber ?? Number.MAX_SAFE_INTEGER) - (right.trackNumber ?? Number.MAX_SAFE_INTEGER) ||
+              left.title.localeCompare(right.title),
+          ),
+      }))
       .sort((left, right) => left.album.localeCompare(right.album));
   }, [visibleTracks]);
 

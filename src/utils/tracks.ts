@@ -37,15 +37,28 @@ export function buildTrackMetadata(item: DriveItem): Track {
   const fileName = item.name.replace(/\.[^/.]+$/, '');
   const cleaned = fileName.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
   const words = cleaned.split(' ').filter(Boolean);
-  const artist = words.length > 1 && !words[0].match(/^\d+$/) ? words[0] : 'OneDrive';
-  const title = words.length > 1 ? words.slice(1).join(' ') : cleaned || item.name;
-  const album = item.parentReference?.path?.split('/').filter(Boolean).pop() || 'Music';
+  const guessedArtist = words.length > 1 && !words[0].match(/^\d+$/) ? words[0] : 'Unknown artist';
+  const guessedTitle = words.length > 1 ? words.slice(1).join(' ') : cleaned || item.name;
+
+  const audio = item.audio || {};
+  let folderName = '';
+  try {
+    folderName = decodeURIComponent(item.parentReference?.path?.split('/').filter(Boolean).pop() || '');
+  } catch {
+    folderName = item.parentReference?.path?.split('/').filter(Boolean).pop() || '';
+  }
+
+  const title = audio.title?.trim() || guessedTitle;
+  const artist = audio.artist?.trim() || audio.albumArtist?.trim() || guessedArtist;
+  const album = audio.album?.trim() || folderName || 'Singles';
+
   return {
     id: item.id,
     name: item.name,
     title,
     artist,
     album,
+    trackNumber: typeof audio.track === 'number' ? audio.track : undefined,
     mimeType: item.file?.mimeType || 'audio/mpeg',
     path: item.parentReference?.path || '',
   };

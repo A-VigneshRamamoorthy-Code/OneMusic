@@ -45,6 +45,13 @@ export function useNowPlayingSheet(): NowPlayingSheet {
   }, [isOpen]);
 
   const handlePointerDown = useCallback((event: ReactPointerEvent) => {
+    // Let interactive controls (sliders, buttons, links) handle their own gestures so
+    // dragging works "from anywhere" else on the sheet without breaking the scrubber,
+    // volume slider or transport buttons.
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest('input, button, a, [role="slider"], [data-no-drag]')) {
+      return;
+    }
     dragStartRef.current = { y: event.clientY, time: Date.now() };
     setIsDragging(true);
     try {

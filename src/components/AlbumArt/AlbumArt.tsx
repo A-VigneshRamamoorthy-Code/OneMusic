@@ -129,7 +129,7 @@ function NoteMesh({ colors, ids, random }: StyleProps) {
 }
 
 /** Procedurally generated, music-themed album art used when a real cover is missing. */
-export function AlbumArt({ seed, playing = false, spin = false, className }: AlbumArtProps) {
+export function AlbumArt({ seed, playing = false, className }: AlbumArtProps) {
   const rawId = useId();
   const uid = rawId.replace(/:/g, '');
   const { colors, style, random } = useMemo(() => {
@@ -148,13 +148,12 @@ export function AlbumArt({ seed, playing = false, spin = false, className }: Alb
     soft: `${uid}-soft`,
   };
   const angle = (hashString(seed) % 4) * 45;
-  const spinning = spin && playing && style === 0;
   const styleProps: StyleProps = { colors, ids, random };
 
   return (
     <Art
       className={className}
-      $spinning={spinning}
+      $playing={playing}
       viewBox="0 0 100 100"
       role="img"
       aria-label="Generated album art"

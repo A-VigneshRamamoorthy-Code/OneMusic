@@ -3,12 +3,10 @@ import type { AlbumGroup, DownloadedTrackMeta, Track, ViewMode } from '../../typ
 export interface LibraryProps {
   isLoading: boolean;
   viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
   tracks: Track[];
   visibleTracks: Track[];
   albumGroups: AlbumGroup[];
   visibleDownloaded: DownloadedTrackMeta[];
-  downloadedTracks: DownloadedTrackMeta[];
   folderPath: string;
   activeTrackId: string | null;
   isPlaying: boolean;

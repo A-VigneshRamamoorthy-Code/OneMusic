@@ -1,13 +1,19 @@
 import styled, { css } from 'styled-components';
-import { vinyl } from '../../styles/keyframes';
+import { breathe } from '../../styles/keyframes';
 
-export const Art = styled.svg<{ $spinning: boolean }>`
+export const Art = styled.svg<{ $playing: boolean }>`
   display: block;
   width: 100%;
   height: 100%;
+  transform-origin: center;
+  will-change: transform;
   ${(props) =>
-    props.$spinning &&
+    props.$playing &&
     css`
-      animation: ${vinyl} 10s linear infinite;
+      animation: ${breathe} 4.5s ease-in-out infinite;
     `}
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;

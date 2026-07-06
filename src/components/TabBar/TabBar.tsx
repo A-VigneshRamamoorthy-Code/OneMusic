@@ -1,16 +1,9 @@
-import { useRef } from 'react';
-import { IconHome, IconMic, IconSearch } from '../Icon';
+import { IconHome, IconSearch, IconSettings } from '../Icon';
 import type { TabBarProps } from './TabBar.types';
 import * as S from './TabBar.style';
 
-/** Floating bottom bar: Home, library search, and a mic that focuses the search. */
-export function TabBar({ searchTerm, onSearchChange, onHome }: TabBarProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const focusSearch = () => {
-    inputRef.current?.focus();
-  };
-
+/** Floating bottom bar: Home, library search, and Settings. */
+export function TabBar({ searchTerm, onSearchChange, onHome, onOpenSettings }: TabBarProps) {
   return (
     <S.Bar>
       <S.RoundButton type="button" onClick={onHome} aria-label="Home">
@@ -21,7 +14,6 @@ export function TabBar({ searchTerm, onSearchChange, onHome }: TabBarProps) {
           <IconSearch size={18} />
         </S.SearchIcon>
         <S.Input
-          ref={inputRef}
           type="search"
           value={searchTerm}
           placeholder="Songs, artists, albums…"
@@ -29,8 +21,8 @@ export function TabBar({ searchTerm, onSearchChange, onHome }: TabBarProps) {
           onChange={(event) => onSearchChange(event.target.value)}
         />
       </S.Search>
-      <S.RoundButton type="button" onClick={focusSearch} aria-label="Search by voice">
-        <IconMic size={20} />
+      <S.RoundButton type="button" onClick={onOpenSettings} aria-label="Settings">
+        <IconSettings size={20} />
       </S.RoundButton>
     </S.Bar>
   );

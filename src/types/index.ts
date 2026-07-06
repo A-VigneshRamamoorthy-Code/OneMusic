@@ -9,6 +9,8 @@ export interface Track {
   title: string;
   artist: string;
   album: string;
+  /** Track number within its album (from ID3 metadata), when available. */
+  trackNumber?: number;
   mimeType?: string;
   path?: string;
 }
@@ -29,12 +31,23 @@ export type ViewMode = 'songs' | 'albums' | 'downloaded';
 
 export type AuthState = 'idle' | 'config' | 'ready' | 'error';
 
+/** Microsoft Graph `audio` facet: ID3-derived metadata for audio driveItems. */
+export interface DriveAudioFacet {
+  album?: string;
+  albumArtist?: string;
+  artist?: string;
+  title?: string;
+  track?: number;
+  year?: number;
+}
+
 /** Minimal shape of the Microsoft Graph driveItem fields we rely on. */
 export interface DriveItem {
   id: string;
   name: string;
   folder?: unknown;
   file?: { mimeType?: string };
+  audio?: DriveAudioFacet;
   parentReference?: { path?: string };
 }
 

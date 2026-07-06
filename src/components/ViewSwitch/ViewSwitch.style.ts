@@ -1,20 +1,28 @@
 import styled, { css } from 'styled-components';
+import { rise } from '../../styles/keyframes';
 
 export const Switch = styled.div`
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   gap: 4px;
-  padding: 4px;
-  border-radius: var(--radius-full);
-  background: var(--neutral-secondary-medium);
+  padding: 5px;
+  border-radius: 22px;
   border: 1px solid var(--border-default);
-  align-self: flex-start;
+  background: var(--neutral-primary-soft);
+  background: color-mix(in srgb, var(--neutral-primary-soft) 66%, transparent);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  backdrop-filter: blur(28px) saturate(1.6);
+  box-shadow: var(--shadow-lg);
+  animation: ${rise} var(--dur) var(--ease-out) both;
 `;
 
 export const Tab = styled.button<{ $active: boolean }>`
+  flex: 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 7px 12px;
+  padding: 8px 12px;
   border-radius: var(--radius-full);
   font-size: 13px;
   font-weight: 700;

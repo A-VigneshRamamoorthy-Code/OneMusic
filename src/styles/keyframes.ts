@@ -22,3 +22,12 @@ export const eq = keyframes`
   0%, 100% { transform: scaleY(0.35); }
   50% { transform: scaleY(1); }
 `;
+
+export const breathe = keyframes`
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.055); }
+`;
+
+export const sheen = keyframes`
+  to { transform: rotate(360deg); }
+`;

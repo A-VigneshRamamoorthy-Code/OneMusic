@@ -6,8 +6,8 @@ export const Player = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  border-radius: 20px;
+  padding: 8px 10px 10px;
+  border-radius: 28px;
   border: 1px solid var(--border-default);
   background: var(--neutral-primary-soft);
   background: color-mix(in srgb, var(--neutral-primary-soft) 66%, transparent);
@@ -20,16 +20,17 @@ export const Player = styled.div`
 
 export const Bar = styled.span`
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 3px;
   background: var(--neutral-secondary-medium);
 `;
 
 export const BarFill = styled.span`
   display: block;
   height: 100%;
+  border-radius: 0 3px 3px 0;
   background: linear-gradient(90deg, var(--brand), var(--brand-strong));
   transition: width 200ms linear;
 `;
@@ -38,7 +39,7 @@ export const Art = styled.span`
   width: 44px;
   height: 44px;
   flex: 0 0 auto;
-  border-radius: var(--radius-default);
+  border-radius: 14px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
 `;

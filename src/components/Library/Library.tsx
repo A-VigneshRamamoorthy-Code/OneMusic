@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { AlbumGroup, AlbumGroups } from '../AlbumGroup';
 import { Placeholder } from '../Placeholder';
 import { ScanBanner, TrackList, TrackRow } from '../TrackRow';
-import { ViewSwitch } from '../ViewSwitch';
 import { folderLabel } from '../../utils/tracks';
 import type { Track } from '../../types';
 import type { LibraryProps } from './Library.types';
@@ -11,12 +10,10 @@ import * as S from './Library.style';
 export function Library({
   isLoading,
   viewMode,
-  onViewModeChange,
   tracks,
   visibleTracks,
   albumGroups,
   visibleDownloaded,
-  downloadedTracks,
   folderPath,
   activeTrackId,
   isPlaying,
@@ -42,9 +39,8 @@ export function Library({
   );
 
   const scanBanner = <>Still scanning {folderLabel(folderPath)} — tap any track to play now.</>;
-  const emptyMessage = <>No tracks yet. Enter a folder under “My files” and hit Sync.</>;
+  const emptyMessage = <>No tracks yet — open Settings, choose a folder under “My files” and tap Sync.</>;
   const scanningMessage = <>Scanning {folderLabel(folderPath)} for audio files…</>;
-  const hasLibrary = tracks.length > 0 || downloadedTracks.length > 0;
 
   const title = isLoading
     ? 'Scanning…'
@@ -100,9 +96,6 @@ export function Library({
       <S.Head>
         <S.Title>{title}</S.Title>
       </S.Head>
-      {hasLibrary ? (
-        <ViewSwitch viewMode={viewMode} downloadedCount={downloadedTracks.length} onChange={onViewModeChange} />
-      ) : null}
       {content}
     </S.Section>
   );

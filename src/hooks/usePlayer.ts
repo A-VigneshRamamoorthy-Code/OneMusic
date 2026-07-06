@@ -50,10 +50,51 @@ export function usePlayer({
   const cacheRef = useRef<Map<string, string>>(new Map());
   const orderedRef = useRef<Track[]>(orderedTracks);
   const activeIdRef = useRef<string | null>(activeTrackId);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+  const volumeRef = useRef(0.8);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
+
+  /**
+   * Route the <audio> element through a Web Audio GainNode. iOS Safari ignores
+   * `audio.volume`, but honours GainNode gain, so this makes the volume slider work
+   * on iPhone. Created lazily on first playback (needs a user gesture) and only once
+   * per element (createMediaElementSource may run a single time).
+   */
+  const ensureAudioGraph = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+    try {
+      if (!audioCtxRef.current) {
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!AudioCtx) {
+          return;
+        }
+        const ctx = new AudioCtx();
+        const source = ctx.createMediaElementSource(audio);
+        const gain = ctx.createGain();
+        gain.gain.value = volumeRef.current;
+        source.connect(gain);
+        gain.connect(ctx.destination);
+        audioCtxRef.current = ctx;
+        gainRef.current = gain;
+        // Output level is now controlled by the gain node; keep the element at full.
+        audio.volume = 1;
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        void audioCtxRef.current.resume();
+      }
+    } catch {
+      /* Web Audio unavailable — fall back to element volume. */
+    }
+  }, []);
 
   useEffect(() => {
     orderedRef.current = orderedTracks;
@@ -102,6 +143,7 @@ export function usePlayer({
   const playTrack = useCallback(
     async (track: Track) => {
       setActiveTrackId(track.id);
+      ensureAudioGraph();
       if (!cacheRef.current.has(track.id)) {
         setStatus(`Preparing ${track.title}…`);
       }
@@ -120,7 +162,7 @@ export function usePlayer({
         setStatus(`Playback failed: ${getErrorMessage(error)}`);
       }
     },
-    [resolveObjectUrl, setActiveTrackId, setStatus],
+    [ensureAudioGraph, resolveObjectUrl, setActiveTrackId, setStatus],
   );
 
   const playNext = useCallback(() => {
@@ -154,6 +196,7 @@ export function usePlayer({
     }
     if (audio.paused) {
       try {
+        ensureAudioGraph();
         await audio.play();
         setIsPlaying(true);
       } catch (error) {
@@ -163,16 +206,17 @@ export function usePlayer({
       audio.pause();
       setIsPlaying(false);
     }
-  }, [setStatus]);
+  }, [ensureAudioGraph, setStatus]);
 
   const resume = useCallback(async () => {
     try {
+      ensureAudioGraph();
       await audioRef.current?.play();
       setIsPlaying(true);
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [ensureAudioGraph]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -189,8 +233,16 @@ export function usePlayer({
 
   const changeVolume = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.target.value);
+    volumeRef.current = value;
     setVolume(value);
-    if (audioRef.current) {
+    if (gainRef.current && audioCtxRef.current) {
+      // Smooth the change slightly to avoid zipper noise.
+      try {
+        gainRef.current.gain.setTargetAtTime(value, audioCtxRef.current.currentTime, 0.01);
+      } catch {
+        gainRef.current.gain.value = value;
+      }
+    } else if (audioRef.current) {
       audioRef.current.volume = value;
     }
   }, []);

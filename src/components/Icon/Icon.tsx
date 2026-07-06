@@ -219,3 +219,39 @@ export function IconChevronUp({ size, className }: IconProps) {
     </Stroke>
   );
 }
+
+export function IconChevronDown({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <polyline points="6 9 12 15 18 9" />
+    </Stroke>
+  );
+}
+
+export function IconClose({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <path d="M18 6 6 18M6 6l12 12" />
+    </Stroke>
+  );
+}
+
+export function IconSettings({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+    </Stroke>
+  );
+}
+
+export function IconPalette({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <path d="M12 3a9 9 0 1 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1a1.5 1.5 0 0 1 1.1-2.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" />
+      <circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="7.5" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="16.5" cy="10.5" r="1.1" fill="currentColor" stroke="none" />
+    </Stroke>
+  );
+}
