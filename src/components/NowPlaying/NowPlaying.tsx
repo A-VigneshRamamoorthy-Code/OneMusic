@@ -67,7 +67,7 @@ export function NowPlaying({
 
         <S.Body>
           <S.ArtWrap $playing={isPlaying}>
-            <AlbumArt seed={track.id} playing={isPlaying} />
+            <AlbumArt seed={track.id} playing={isPlaying} variant="player" />
           </S.ArtWrap>
 
           <S.Meta>

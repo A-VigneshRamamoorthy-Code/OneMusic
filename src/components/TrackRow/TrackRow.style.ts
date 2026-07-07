@@ -119,6 +119,9 @@ export const Row = styled.li<{ $active: boolean; $row: number }>`
   transition: background var(--dur-quick) var(--ease), border-color var(--dur-quick);
   animation: ${rise} var(--dur) var(--ease-out) both;
   animation-delay: calc(${(props) => props.$row} * 28ms);
+  /* Skip layout/paint for off-screen rows — critical with large libraries (1000+ tracks). */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 66px;
 
   &:hover {
     background: var(--neutral-secondary-medium);

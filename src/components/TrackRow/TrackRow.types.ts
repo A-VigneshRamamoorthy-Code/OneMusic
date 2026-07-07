@@ -4,7 +4,8 @@ export interface TrackRowProps {
   track: Track;
   index: number;
   isActive: boolean;
-  isPlaying: boolean;
+  /** True only when this specific track is both active AND currently playing. */
+  isActivePlaying: boolean;
   isDownloaded: boolean;
   isDownloading: boolean;
   onSelect: (track: Track) => void;

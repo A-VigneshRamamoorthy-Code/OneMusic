@@ -25,6 +25,10 @@ export function TabBar({
   const tabRefs = useRef<Partial<Record<DockTab, HTMLButtonElement | null>>>({});
 
   const openSearch = () => {
+    // Switch to songs/home view before showing the search bar so results appear in the list.
+    if (activeTab !== 'songs') {
+      onHome();
+    }
     setIsSearchOpen(true);
     requestAnimationFrame(() => inputRef.current?.focus());
   };

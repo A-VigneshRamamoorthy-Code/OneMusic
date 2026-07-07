@@ -1,48 +1,78 @@
 import styled from 'styled-components';
 import { rise } from '../../styles/keyframes';
 
+/** 2-column album grid container. */
 export const Groups = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 12px;
 `;
 
-export const Group = styled.section`
+export const Card = styled.article`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   animation: ${rise} var(--dur) var(--ease-out) both;
 `;
 
-export const Head = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 4px 2px;
+export const ArtWrap = styled.div`
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: var(--radius-base);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
 `;
 
-export const Art = styled.span`
-  width: 46px;
-  height: 46px;
-  flex: 0 0 auto;
-  border-radius: var(--radius-default);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
+export const ArtBtn = styled.button`
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform var(--dur-quick) var(--ease);
+
+  &:active {
+    transform: scale(0.96);
+  }
+`;
+
+export const PlayBtn = styled.button`
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  display: inline-grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  transition: transform var(--dur-quick), background var(--dur-quick);
+
+  &:active {
+    transform: scale(0.88);
+    background: var(--brand);
+  }
 `;
 
 export const Meta = styled.div`
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  gap: 2px;
+  padding: 0 2px;
 `;
 
 export const Title = styled.span`
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 export const Count = styled.span`
-  font-size: 12px;
+  font-size: 11px;
   color: var(--body-subtle);
 `;

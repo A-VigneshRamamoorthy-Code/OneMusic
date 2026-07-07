@@ -41,6 +41,7 @@ export const Sheet = styled.div<{ $open: boolean; $dragging: boolean }>`
   cursor: grab;
   transform: ${(props) => (props.$open ? 'translateY(0)' : 'translateY(100%)')};
   transition: ${(props) => (props.$dragging ? 'none' : 'transform var(--dur-slow) var(--ease-out)')};
+  will-change: transform;
 
   &:active {
     cursor: grabbing;

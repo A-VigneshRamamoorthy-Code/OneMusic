@@ -1,14 +1,15 @@
+import { memo } from 'react';
 import { AlbumArt } from '../AlbumArt';
 import { IconButton } from '../IconButton';
 import { IconCheck, IconDownload, IconPlay, IconSpinner } from '../Icon';
 import type { TrackRowProps } from './TrackRow.types';
 import * as S from './TrackRow.style';
 
-export function TrackRow({
+function TrackRowInner({
   track,
   index,
   isActive,
-  isPlaying,
+  isActivePlaying,
   isDownloaded,
   isDownloading,
   onSelect,
@@ -19,9 +20,9 @@ export function TrackRow({
     <S.Row $active={isActive} $row={index % 12}>
       <S.Main type="button" onClick={() => onSelect(track)}>
         <S.ArtWrap>
-          <AlbumArt seed={track.id} playing={isActive && isPlaying} />
+          <AlbumArt seed={track.id} playing={isActivePlaying} />
           <S.Overlay aria-hidden="true">
-            {isActive && isPlaying ? (
+            {isActivePlaying ? (
               <S.Eq>
                 <i />
                 <i />
@@ -59,3 +60,5 @@ export function TrackRow({
     </S.Row>
   );
 }
+
+export const TrackRow = memo(TrackRowInner);

@@ -1,13 +1,15 @@
+import { memo, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AlbumGroup, AlbumGroups } from '../AlbumGroup';
 import { Placeholder } from '../Placeholder';
 import { ScanBanner, TrackList, TrackRow } from '../TrackRow';
+import { IconChevronLeft } from '../Icon';
 import { folderLabel } from '../../utils/tracks';
 import type { Track } from '../../types';
 import type { LibraryProps } from './Library.types';
 import * as S from './Library.style';
 
-export function Library({
+function LibraryInner({
   isLoading,
   viewMode,
   tracks,
@@ -23,13 +25,19 @@ export function Library({
   onDownload,
   onRemoveDownload,
 }: LibraryProps) {
+  const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedAlbum(null);
+  }, [viewMode]);
+
   const renderRow = (track: Track, index: number) => (
     <TrackRow
       key={track.id}
       track={track}
       index={index}
       isActive={activeTrackId === track.id}
-      isPlaying={isPlaying}
+      isActivePlaying={activeTrackId === track.id && isPlaying}
       isDownloaded={isDownloaded(track.id)}
       isDownloading={isDownloading(track.id)}
       onSelect={onSelect}
@@ -39,7 +47,7 @@ export function Library({
   );
 
   const scanBanner = <>Still scanning {folderLabel(folderPath)} — tap any track to play now.</>;
-  const emptyMessage = <>No tracks yet — open Settings, choose a folder under “My files” and tap Sync.</>;
+  const emptyMessage = <>No tracks yet — open Settings, choose a folder under "My files" and tap Sync.</>;
   const scanningMessage = <>Scanning {folderLabel(folderPath)} for audio files…</>;
 
   const title = isLoading
@@ -62,21 +70,45 @@ export function Library({
         </Placeholder>
       );
   } else if (viewMode === 'albums') {
-    content =
-      albumGroups.length > 0 ? (
-        <AlbumGroups>
-          {isLoading ? <ScanBanner>{scanBanner}</ScanBanner> : null}
-          {albumGroups.map((group) => (
-            <AlbumGroup key={group.album} album={group.album} count={group.tracks.length} artSeed={group.tracks[0].id}>
-              {group.tracks.map(renderRow)}
-            </AlbumGroup>
-          ))}
-        </AlbumGroups>
-      ) : isLoading ? (
-        <Placeholder spinner>{scanningMessage}</Placeholder>
-      ) : (
-        <Placeholder artSeed="empty-state">{emptyMessage}</Placeholder>
-      );
+    if (selectedAlbum) {
+      const group = albumGroups.find((g) => g.album === selectedAlbum);
+      content = group ? (
+        <>
+          <S.DetailHeader>
+            <S.BackBtn type="button" onClick={() => setSelectedAlbum(null)} aria-label="Back to albums">
+              <IconChevronLeft size={18} />
+              Albums
+            </S.BackBtn>
+            <S.DetailAlbum>{group.album}</S.DetailAlbum>
+            <S.DetailCount>{group.tracks.length} track{group.tracks.length === 1 ? '' : 's'}</S.DetailCount>
+          </S.DetailHeader>
+          <TrackList>{group.tracks.map(renderRow)}</TrackList>
+        </>
+      ) : null;
+    } else {
+      content =
+        albumGroups.length > 0 ? (
+          <>
+            {isLoading ? <ScanBanner>{scanBanner}</ScanBanner> : null}
+            <AlbumGroups>
+              {albumGroups.map((group) => (
+                <AlbumGroup
+                  key={group.album}
+                  album={group.album}
+                  count={group.tracks.length}
+                  artSeed={group.tracks[0].id}
+                  onPlay={() => onSelect(group.tracks[0])}
+                  onToggle={() => setSelectedAlbum(group.album)}
+                />
+              ))}
+            </AlbumGroups>
+          </>
+        ) : isLoading ? (
+          <Placeholder spinner>{scanningMessage}</Placeholder>
+        ) : (
+          <Placeholder artSeed="empty-state">{emptyMessage}</Placeholder>
+        );
+    }
   } else {
     content =
       visibleTracks.length > 0 ? (
@@ -100,3 +132,5 @@ export function Library({
     </S.Section>
   );
 }
+
+export const Library = memo(LibraryInner);

@@ -220,6 +220,14 @@ export function IconChevronUp({ size, className }: IconProps) {
   );
 }
 
+export function IconChevronLeft({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <polyline points="15 18 9 12 15 6" />
+    </Stroke>
+  );
+}
+
 export function IconChevronDown({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>

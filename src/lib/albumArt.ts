@@ -1,18 +1,21 @@
 export type Palette = readonly [string, string, string];
 
-// Warm, Apple Music–flavored gradient palettes (pinks, reds, corals, magentas).
+// Vinyl-record–inspired gradient palettes: pink, red, purple, and mixed ramps.
 export const PALETTES: readonly Palette[] = [
-  ['#FB5C74', '#FA2D48', '#D5254E'],
-  ['#FF375F', '#FF6482', '#FF9DAE'],
-  ['#FF6A3D', '#FF3B6B', '#E11D48'],
-  ['#FF2D55', '#F43F6B', '#A21CAF'],
-  ['#F43F5E', '#EC4899', '#A855F7'],
-  ['#FF7A59', '#FF4D6D', '#C9184A'],
-  ['#FFB03A', '#FF5E5B', '#FA2D48'],
-  ['#FF5E7E', '#E11D48', '#7A1030'],
+  ['#FF6B9D', '#F43F5E', '#A855F7'],  // hot-pink → red → purple (reference)
+  ['#FB5C74', '#FA2D48', '#D5254E'],  // apple red
+  ['#F43F5E', '#EC4899', '#A855F7'],  // rose → pink → violet
+  ['#FF375F', '#FF6482', '#FF9DAE'],  // crimson → light-pink
+  ['#FF6A3D', '#FF3B6B', '#C026D3'],  // coral → magenta
+  ['#FF2D55', '#F43F6B', '#7C3AED'],  // brand-red → violet
+  ['#FF7A59', '#FF4D6D', '#C9184A'],  // coral-red
+  ['#FFB03A', '#FF5E5B', '#FA2D48'],  // gold → red
+  ['#E040FB', '#F43F5E', '#FF6B9D'],  // magenta → pink
+  ['#9C27B0', '#E91E63', '#FF6584'],  // purple → hot-pink
 ];
 
-export const STYLE_COUNT = 5;
+// Only the vinyl style is used; the constant is kept for future extension.
+export const STYLE_COUNT = 1;
 
 /** Deterministic FNV-1a hash of a string, used to seed the generated art. */
 export function hashString(value: string): number {
