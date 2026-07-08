@@ -1,12 +1,11 @@
 import styled from 'styled-components';
 import { rise } from '../../styles/keyframes';
 
-/** 2-column album grid container. */
+/** Responsive album grid — 2 cols on portrait mobile, more in landscape/tablet/desktop. */
 export const Groups = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 16px 12px;
-  /* Prevent grid from overflowing its container. */
   min-width: 0;
   width: 100%;
 `;
