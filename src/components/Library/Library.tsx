@@ -2,9 +2,10 @@ import { memo, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AlbumGroup, AlbumGroups } from '../AlbumGroup';
 import { Button } from '../Button';
+import { IconButton } from '../IconButton';
 import { Placeholder } from '../Placeholder';
 import { ScanBanner, TrackList, TrackRow } from '../TrackRow';
-import { IconChevronLeft, IconDownload } from '../Icon';
+import { IconChevronLeft, IconDownload, IconSpinner, IconStop } from '../Icon';
 import { folderLabel } from '../../utils/tracks';
 import type { Track } from '../../types';
 import type { LibraryProps } from './Library.types';
@@ -23,6 +24,7 @@ function LibraryInner({
   isPlaying,
   isDownloaded,
   isDownloading,
+  isBatchDownloading,
   onSelect,
   onDownload,
   onDownloadAll,
@@ -131,11 +133,28 @@ function LibraryInner({
     <S.Section>
       <S.Head>
         <S.Title>{title}</S.Title>
-        {viewMode === 'songs' && tracks.length > 0 ? (
+        {((viewMode === 'songs' && tracks.length > 0) || isBatchDownloading) ? (
           <S.HeaderAction>
-            <Button variant="secondary" size="sm" onClick={onDownloadAll} disabled={isLoading}>
-              <IconDownload size={16} /> Download all
-            </Button>
+            <IconButton
+              tone="header"
+              size="sm"
+              active={isBatchDownloading}
+              onClick={onDownloadAll}
+              disabled={isLoading && !isBatchDownloading}
+              aria-label={isBatchDownloading ? 'Stop downloading songs' : 'Download songs'}
+              title={isBatchDownloading ? 'Stop downloading songs' : 'Download songs'}
+            >
+              {isBatchDownloading ? (
+                <S.BatchProgress>
+                  <IconSpinner size={18} />
+                  <S.StopGlyph>
+                    <IconStop size={8} />
+                  </S.StopGlyph>
+                </S.BatchProgress>
+              ) : (
+                <IconDownload size={18} />
+              )}
+            </IconButton>
           </S.HeaderAction>
         ) : viewMode === 'downloaded' && downloadedCount > 0 ? (
           <S.HeaderAction>

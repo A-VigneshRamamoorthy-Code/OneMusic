@@ -159,6 +159,14 @@ export function IconSpinner({ size, className }: IconProps) {
   );
 }
 
+export function IconStop({ size, className }: IconProps) {
+  return (
+    <Filled size={size} className={className}>
+      <rect x="5" y="5" width="14" height="14" rx="2" />
+    </Filled>
+  );
+}
+
 export function IconList({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>

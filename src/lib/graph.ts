@@ -14,9 +14,10 @@ function withChildrenQuery(route: string): string {
 }
 
 /** Download the raw audio content for a track as a Blob. */
-export async function fetchTrackContent(trackId: string, token: string): Promise<Blob> {
+export async function fetchTrackContent(trackId: string, token: string, signal?: AbortSignal): Promise<Blob> {
   const response = await fetch(`${GRAPH_BASE}/me/drive/items/${trackId}/content`, {
     headers: { Authorization: `Bearer ${token}` },
+    signal,
   });
   if (!response.ok) {
     throw new Error(`Audio download failed with status ${response.status}`);

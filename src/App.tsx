@@ -121,33 +121,39 @@ export default function App() {
         toDownload.push(track);
       }
     }
-    const pending = toDownload.filter((track) => !downloads.isDownloaded(track.id) && !downloads.isDownloading(track.id));
-    if (!pending.length) {
-      setStatus('Those songs are already downloaded or in progress.');
-      return;
-    }
-    for (const track of pending) {
-      // Sequential keeps status and token usage predictable on mobile browsers.
-      // eslint-disable-next-line no-await-in-loop
-      await downloads.downloadTrack(track);
-    }
+    await downloads.downloadBatch(toDownload);
   }, [activeTrackId, downloads, library.orderedTracks]);
 
-  const handleDownloadAll = useCallback(async () => {
-    const pending = library.tracks.filter(
-      (track) => !downloads.isDownloaded(track.id) && !downloads.isDownloading(track.id),
-    );
-    if (!pending.length) {
-      setStatus('All library songs are already downloaded or in progress.');
+  const handleDownloadAll = useCallback(() => {
+    if (downloads.isBatchDownloading) {
+      downloads.cancelBatchDownload();
       return;
     }
-    setStatus(`Downloading ${pending.length} song${pending.length === 1 ? '' : 's'}…`);
-    for (const track of pending) {
-      // Download sequentially to avoid saturating mobile connections and storage.
-      // eslint-disable-next-line no-await-in-loop
-      await downloads.downloadTrack(track);
+
+    const playlist = library.tracks;
+    if (!playlist.length) {
+      return;
     }
-    setStatus(`Finished downloading ${pending.length} song${pending.length === 1 ? '' : 's'}.`);
+
+    const raw = window.prompt(
+      `How many songs should be downloaded? Enter a number from 1-${playlist.length}, or type "all".`,
+      'all',
+    );
+    if (raw === null) {
+      return;
+    }
+    const value = raw.trim().toLowerCase();
+    if (value === 'all' || value === '*') {
+      void downloads.downloadBatch(playlist);
+      return;
+    }
+
+    const count = Number.parseInt(value, 10);
+    if (!Number.isFinite(count) || count < 1 || count > playlist.length) {
+      setStatus(`Enter a number from 1-${playlist.length}, or type "all".`);
+      return;
+    }
+    void downloads.downloadBatch(playlist.slice(0, count));
   }, [downloads, library.tracks, setStatus]);
 
   // Return to the library automatically once a user-triggered sync starts streaming tracks.
@@ -222,6 +228,7 @@ export default function App() {
               isPlaying={player.isPlaying}
               isDownloaded={downloads.isDownloaded}
               isDownloading={downloads.isDownloading}
+              isBatchDownloading={downloads.isBatchDownloading}
               onSelect={player.playTrack}
               onDownload={downloads.downloadTrack}
               onDownloadAll={handleDownloadAll}

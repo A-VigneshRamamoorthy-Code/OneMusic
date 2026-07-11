@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { spin } from '../../styles/keyframes';
 
 export const Section = styled.section`
   display: flex;
@@ -21,6 +22,25 @@ export const Title = styled.h2`
 
 export const HeaderAction = styled.div`
   flex: 0 0 auto;
+`;
+
+export const BatchProgress = styled.span`
+  position: relative;
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+
+  & > svg:first-child {
+    animation: ${spin} 800ms linear infinite;
+  }
+`;
+
+export const StopGlyph = styled.span`
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
 `;
 
 export const DetailHeader = styled.div`

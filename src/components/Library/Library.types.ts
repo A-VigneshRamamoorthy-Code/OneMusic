@@ -13,6 +13,7 @@ export interface LibraryProps {
   isPlaying: boolean;
   isDownloaded: (id: string) => boolean;
   isDownloading: (id: string) => boolean;
+  isBatchDownloading: boolean;
   onSelect: (track: Track) => void;
   onDownload: (track: Track) => void;
   onDownloadAll: () => void;
