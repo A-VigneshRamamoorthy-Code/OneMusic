@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { AlbumArt } from '../AlbumArt';
 import { IconButton } from '../IconButton';
 import { IconCheck, IconDownload, IconPlay, IconSpinner } from '../Icon';
+import { formatTrackMetaLine } from '../../utils/format';
 import type { TrackRowProps } from './TrackRow.types';
 import * as S from './TrackRow.style';
 
@@ -37,9 +38,7 @@ function TrackRowInner({
         </S.ArtWrap>
         <S.Meta>
           <S.Title>{track.title}</S.Title>
-          <S.Sub>
-            {track.artist} • {track.album}
-          </S.Sub>
+          <S.Sub>{formatTrackMetaLine(track.album, track.artist)}</S.Sub>
         </S.Meta>
       </S.Main>
       <S.Actions>

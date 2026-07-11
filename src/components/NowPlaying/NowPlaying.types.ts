@@ -10,6 +10,7 @@ export interface NowPlayingProps {
   progress: number;
   duration: number;
   volume: number;
+  isShuffleOn: boolean;
   isDownloaded: boolean;
   isDownloading: boolean;
   onClose: () => void;
@@ -18,6 +19,7 @@ export interface NowPlayingProps {
   onNext: () => void;
   onPrevious: () => void;
   onVolumeChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onToggleShuffle: () => void;
   onDownload: () => void;
   onRemoveDownload: () => void;
   onPointerDown: PointerEventHandler<HTMLDivElement>;

@@ -178,7 +178,7 @@ export const Range = styled.input`
   width: 100%;
   height: 6px;
   accent-color: var(--brand);
-  touch-action: none;
+  touch-action: auto;
   cursor: pointer;
 `;
 
@@ -193,6 +193,24 @@ export const Transport = styled.div`
   display: flex;
   align-items: center;
   gap: clamp(18px, 6vw, 30px);
+`;
+
+export const ShuffleButton = styled.button<{ $active: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: ${(props) => (props.$active ? 'var(--fg-brand)' : 'var(--body-subtle)')};
+  background: ${(props) => (props.$active ? 'var(--brand-soft)' : 'var(--neutral-secondary-soft)')};
+  border: 1px solid ${(props) => (props.$active ? 'var(--border-brand)' : 'transparent')};
+  border-radius: var(--radius-pill);
+  padding: 8px 12px;
+  transition: transform var(--dur-quick), background var(--dur-quick), color var(--dur-quick);
+
+  &:active {
+    transform: scale(0.97);
+  }
 `;
 
 export const PlayButton = styled.button`
@@ -223,7 +241,7 @@ export const Volume = styled.label`
     width: 100%;
     height: 6px;
     accent-color: var(--brand);
-    touch-action: none;
+    touch-action: auto;
     cursor: pointer;
   }
 `;

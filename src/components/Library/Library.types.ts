@@ -7,6 +7,7 @@ export interface LibraryProps {
   visibleTracks: Track[];
   albumGroups: AlbumGroup[];
   visibleDownloaded: DownloadedTrackMeta[];
+  downloadedCount: number;
   folderPath: string;
   activeTrackId: string | null;
   isPlaying: boolean;
@@ -15,4 +16,5 @@ export interface LibraryProps {
   onSelect: (track: Track) => void;
   onDownload: (track: Track) => void;
   onRemoveDownload: (track: Track) => void;
+  onRemoveAllDownloads: () => void;
 }

@@ -119,6 +119,19 @@ export function IconDownload({ size, className }: IconProps) {
   );
 }
 
+export function IconShuffle({ size, className }: IconProps) {
+  return (
+    <Stroke size={size} className={className}>
+      <path d="M16 3h5v5" />
+      <path d="m4 20 7-7" />
+      <path d="M21 3l-7 7" />
+      <path d="m4 4 7 7" />
+      <path d="M16 21h5v-5" />
+      <path d="m14 14 7 7" />
+    </Stroke>
+  );
+}
+
 export function IconCheck({ size, className }: IconProps) {
   return (
     <Stroke size={size} className={className}>

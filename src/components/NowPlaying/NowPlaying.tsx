@@ -8,12 +8,13 @@ import {
   IconNext,
   IconPause,
   IconPlay,
+  IconShuffle,
   IconPrev,
   IconSpinner,
   IconVolumeHigh,
   IconVolumeLow,
 } from '../Icon';
-import { formatTime } from '../../utils/format';
+import { formatTime, formatTrackMetaLine } from '../../utils/format';
 import type { NowPlayingProps } from './NowPlaying.types';
 import * as S from './NowPlaying.style';
 
@@ -27,6 +28,7 @@ export function NowPlaying({
   progress,
   duration,
   volume,
+  isShuffleOn,
   isDownloaded,
   isDownloading,
   onClose,
@@ -35,6 +37,7 @@ export function NowPlaying({
   onNext,
   onPrevious,
   onVolumeChange,
+  onToggleShuffle,
   onDownload,
   onRemoveDownload,
   onPointerDown,
@@ -73,9 +76,7 @@ export function NowPlaying({
           <S.Meta>
             <S.Eyebrow>Now playing</S.Eyebrow>
             <S.Title>{track.title}</S.Title>
-            <S.Sub>
-              {track.artist} • {track.album}
-            </S.Sub>
+            <S.Sub>{formatTrackMetaLine(track.album, track.artist)}</S.Sub>
           </S.Meta>
 
           <S.Scrubber>
@@ -106,6 +107,10 @@ export function NowPlaying({
             </IconButton>
           </S.Transport>
 
+          <S.ShuffleButton type="button" $active={isShuffleOn} onClick={onToggleShuffle} aria-pressed={isShuffleOn}>
+            <IconShuffle size={18} /> {isShuffleOn ? 'Shuffle on' : 'Shuffle off'}
+          </S.ShuffleButton>
+
           <S.Volume htmlFor="np-volume">
             <IconVolumeLow size={18} />
             <input
@@ -135,7 +140,7 @@ export function NowPlaying({
               </Button>
             ) : (
               <Button variant="secondary" size="sm" onClick={onDownload}>
-                <IconDownload size={16} /> Download
+                <IconDownload size={16} /> Download songs
               </Button>
             )}
           </S.Foot>

@@ -20,8 +20,10 @@ export interface UsePlayerResult {
   progress: number;
   duration: number;
   volume: number;
+  isShuffleOn: boolean;
   playTrack: (track: Track) => Promise<void>;
   togglePlayback: () => Promise<void>;
+  toggleShuffle: () => void;
   playNext: () => void;
   playPrevious: () => void;
   seek: (time: number) => void;
@@ -59,6 +61,8 @@ export function usePlayer({
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [isShuffleOn, setIsShuffleOn] = useState(false);
+  const shuffleHistoryRef = useRef<string[]>([]);
 
   // Apply the current volume to the media element. NOTE: we deliberately do NOT route
   // the element through a Web Audio graph — connecting an <audio> to an AudioContext
@@ -201,24 +205,55 @@ export function usePlayer({
     if (!list.length) {
       return;
     }
+    if (isShuffleOn) {
+      const currentId = activeIdRef.current;
+      if (currentId) {
+        shuffleHistoryRef.current.push(currentId);
+      }
+      const candidates = list.filter((track) => track.id !== currentId);
+      const pool = candidates.length ? candidates : list;
+      const nextTrack = pool[Math.floor(Math.random() * pool.length)];
+      if (nextTrack) {
+        void playTrack(nextTrack);
+      }
+      return;
+    }
     const currentIndex = list.findIndex((track) => track.id === activeIdRef.current);
     const nextTrack = list[(currentIndex + 1) % list.length];
     if (nextTrack) {
       void playTrack(nextTrack);
     }
-  }, [playTrack]);
+  }, [isShuffleOn, playTrack]);
 
   const playPrevious = useCallback(() => {
     const list = orderedRef.current;
     if (!list.length) {
       return;
     }
+    if (isShuffleOn) {
+      const previousId = shuffleHistoryRef.current.pop();
+      const previousTrack = previousId ? list.find((track) => track.id === previousId) : null;
+      if (previousTrack) {
+        void playTrack(previousTrack);
+        return;
+      }
+    }
     const currentIndex = list.findIndex((track) => track.id === activeIdRef.current);
     const previousTrack = list[(currentIndex - 1 + list.length) % list.length];
     if (previousTrack) {
       void playTrack(previousTrack);
     }
-  }, [playTrack]);
+  }, [isShuffleOn, playTrack]);
+
+  const toggleShuffle = useCallback(() => {
+    setIsShuffleOn((current) => {
+      const next = !current;
+      if (!next) {
+        shuffleHistoryRef.current = [];
+      }
+      return next;
+    });
+  }, []);
 
   const togglePlayback = useCallback(async () => {
     const audio = audioRef.current;
@@ -334,6 +369,8 @@ export function usePlayer({
     streamUrlCacheRef.current.clear();
     retriedRef.current.clear();
     forceBlobRef.current.clear();
+    setIsShuffleOn(false);
+    shuffleHistoryRef.current = [];
   }, [setActiveTrackId]);
 
   return {
@@ -342,8 +379,10 @@ export function usePlayer({
     progress,
     duration,
     volume,
+    isShuffleOn,
     playTrack,
     togglePlayback,
+    toggleShuffle,
     playNext,
     playPrevious,
     seek,

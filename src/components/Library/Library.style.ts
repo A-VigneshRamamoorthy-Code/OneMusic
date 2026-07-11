@@ -19,6 +19,10 @@ export const Title = styled.h2`
   color: var(--heading);
 `;
 
+export const HeaderAction = styled.div`
+  flex: 0 0 auto;
+`;
+
 export const DetailHeader = styled.div`
   display: flex;
   flex-direction: column;

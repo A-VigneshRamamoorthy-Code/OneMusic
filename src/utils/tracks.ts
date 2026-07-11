@@ -48,8 +48,16 @@ export function buildTrackMetadata(item: DriveItem): Track {
     folderName = item.parentReference?.path?.split('/').filter(Boolean).pop() || '';
   }
 
-  const title = audio.title?.trim() || guessedTitle;
-  const artist = audio.artist?.trim() || audio.albumArtist?.trim() || guessedArtist;
+  const rawTitle = audio.title?.trim() || '';
+  const rawArtist = audio.artist?.trim() || audio.albumArtist?.trim() || '';
+  const unknownPattern = /^(unknown|unknwn|n\/a|na|null|none|undefined)$/i;
+  const numberOnlyPattern = /^[\d\s./-]+$/;
+  const shouldSwapTitleAndArtist =
+    (!rawTitle || unknownPattern.test(rawTitle) || numberOnlyPattern.test(rawTitle)) &&
+    Boolean(rawArtist && !unknownPattern.test(rawArtist));
+
+  const title = shouldSwapTitleAndArtist ? rawArtist : rawTitle || guessedTitle;
+  const artist = shouldSwapTitleAndArtist ? rawTitle || guessedArtist : rawArtist || guessedArtist;
   const album = audio.album?.trim() || folderName || 'Singles';
 
   return {

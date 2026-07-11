@@ -93,6 +93,46 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [sheet]);
 
+  const handleDownloadBatchFromActive = useCallback(async () => {
+    const activeId = activeTrackId;
+    const playlist = library.orderedTracks;
+    if (!activeId || !playlist.length) {
+      return;
+    }
+    const startIndex = playlist.findIndex((track) => track.id === activeId);
+    if (startIndex === -1) {
+      return;
+    }
+    const max = playlist.length;
+    const raw = window.prompt(`How many songs should be downloaded? (1-${max})`, '1');
+    if (raw === null) {
+      return;
+    }
+    const parsed = Number.parseInt(raw.trim(), 10);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      setStatus('Please enter a valid number of songs.');
+      return;
+    }
+    const count = Math.min(max, parsed);
+    const toDownload: Track[] = [];
+    for (let offset = 0; offset < count; offset += 1) {
+      const track = playlist[(startIndex + offset) % max];
+      if (track) {
+        toDownload.push(track);
+      }
+    }
+    const pending = toDownload.filter((track) => !downloads.isDownloaded(track.id) && !downloads.isDownloading(track.id));
+    if (!pending.length) {
+      setStatus('Those songs are already downloaded or in progress.');
+      return;
+    }
+    for (const track of pending) {
+      // Sequential keeps status and token usage predictable on mobile browsers.
+      // eslint-disable-next-line no-await-in-loop
+      await downloads.downloadTrack(track);
+    }
+  }, [activeTrackId, downloads, library.orderedTracks]);
+
   // Return to the library automatically once a user-triggered sync starts streaming tracks.
   const pendingSyncCloseRef = useRef(false);
   const handleSync = useCallback(() => {
@@ -159,6 +199,7 @@ export default function App() {
               visibleTracks={library.visibleTracks}
               albumGroups={library.albumGroups}
               visibleDownloaded={library.visibleDownloaded}
+              downloadedCount={downloads.downloadedTracks.length}
               folderPath={library.folderPath}
               activeTrackId={activeTrackId}
               isPlaying={player.isPlaying}
@@ -167,6 +208,7 @@ export default function App() {
               onSelect={player.playTrack}
               onDownload={downloads.downloadTrack}
               onRemoveDownload={downloads.removeDownload}
+              onRemoveAllDownloads={downloads.removeAllDownloads}
             />
           )}
         </S.Main>
@@ -206,6 +248,7 @@ export default function App() {
             progress={player.progress}
             duration={player.duration}
             volume={player.volume}
+            isShuffleOn={player.isShuffleOn}
             isDownloaded={downloads.isDownloaded(activeTrack.id)}
             isDownloading={downloads.isDownloading(activeTrack.id)}
             onClose={sheet.close}
@@ -214,7 +257,8 @@ export default function App() {
             onNext={player.playNext}
             onPrevious={player.playPrevious}
             onVolumeChange={player.changeVolume}
-            onDownload={() => downloads.downloadTrack(activeTrack)}
+            onToggleShuffle={player.toggleShuffle}
+            onDownload={handleDownloadBatchFromActive}
             onRemoveDownload={() => downloads.removeDownload(activeTrack)}
             onPointerDown={sheet.handlePointerDown}
             onPointerMove={sheet.handlePointerMove}

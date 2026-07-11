@@ -117,3 +117,19 @@ export async function deleteTrack(id: string): Promise<boolean> {
   }
   return true;
 }
+
+export async function clearTracks(): Promise<boolean> {
+  const db = await openDB();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+  return true;
+}

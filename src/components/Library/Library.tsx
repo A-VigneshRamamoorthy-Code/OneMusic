@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AlbumGroup, AlbumGroups } from '../AlbumGroup';
+import { Button } from '../Button';
 import { Placeholder } from '../Placeholder';
 import { ScanBanner, TrackList, TrackRow } from '../TrackRow';
 import { IconChevronLeft } from '../Icon';
@@ -16,6 +17,7 @@ function LibraryInner({
   visibleTracks,
   albumGroups,
   visibleDownloaded,
+  downloadedCount,
   folderPath,
   activeTrackId,
   isPlaying,
@@ -24,6 +26,7 @@ function LibraryInner({
   onSelect,
   onDownload,
   onRemoveDownload,
+  onRemoveAllDownloads,
 }: LibraryProps) {
   const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null);
 
@@ -127,6 +130,13 @@ function LibraryInner({
     <S.Section>
       <S.Head>
         <S.Title>{title}</S.Title>
+        {viewMode === 'downloaded' && downloadedCount > 0 ? (
+          <S.HeaderAction>
+            <Button variant="ghost" size="sm" onClick={onRemoveAllDownloads}>
+              Remove all
+            </Button>
+          </S.HeaderAction>
+        ) : null}
       </S.Head>
       {content}
     </S.Section>

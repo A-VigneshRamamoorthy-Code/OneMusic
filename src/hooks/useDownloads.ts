@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchTrackContent } from '../lib/graph';
-import { deleteTrack, listTracks, saveTrack } from '../lib/offline';
+import { clearTracks, deleteTrack, listTracks, saveTrack } from '../lib/offline';
 import { getErrorMessage } from '../utils/errors';
 import type { DownloadedTrackMeta, MsalAccount, Track } from '../types';
 
@@ -17,6 +17,7 @@ export interface UseDownloadsResult {
   isDownloading: (id: string) => boolean;
   downloadTrack: (track: Track) => Promise<void>;
   removeDownload: (track: Track) => Promise<void>;
+  removeAllDownloads: () => Promise<void>;
   reset: () => void;
 }
 
@@ -103,6 +104,17 @@ export function useDownloads({ ensureAccessToken, setStatus }: UseDownloadsParam
     [setStatus],
   );
 
+  const removeAllDownloads = useCallback(async () => {
+    try {
+      await clearTracks();
+      setDownloadedIds(new Set());
+      setDownloadedTracks([]);
+      setStatus('Removed all offline downloads.');
+    } catch (error) {
+      setStatus(`Could not remove downloads: ${getErrorMessage(error)}`);
+    }
+  }, [setStatus]);
+
   const reset = useCallback(() => {
     setDownloadingIds(new Set());
   }, []);
@@ -115,6 +127,7 @@ export function useDownloads({ ensureAccessToken, setStatus }: UseDownloadsParam
     isDownloading,
     downloadTrack,
     removeDownload,
+    removeAllDownloads,
     reset,
   };
 }
