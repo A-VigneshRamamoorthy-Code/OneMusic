@@ -38,7 +38,7 @@ export function useMediaSession({
           title: activeTrack.title || activeTrack.name || 'Unknown title',
           artist: activeTrack.artist || 'OneMusic',
           album: activeTrack.album || 'OneDrive',
-          artwork: [{ src: artworkDataUrl(activeTrack.id), sizes: '512x512', type: 'image/svg+xml' }],
+          artwork: [{ src: artworkDataUrl(activeTrack.id, isPlaying), sizes: '512x512', type: 'image/svg+xml' }],
         });
       } catch {
         /* MediaMetadata may be unavailable */

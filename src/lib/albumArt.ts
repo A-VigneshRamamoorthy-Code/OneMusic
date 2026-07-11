@@ -38,25 +38,43 @@ export function makeRandom(seed: number): () => number {
 }
 
 /**
- * Standalone SVG data URL for the current track, used as Media Session lock-screen
- * artwork (works where raster is not required; harmless where the platform ignores SVG).
+ * Standalone SVG data URL for Media Session artwork. The disc uses SVG SMIL animation
+ * while playing so platforms that support animated artwork can keep it spinning on the
+ * lock screen; unsupported platforms still receive the same static cover.
  */
-export function artworkDataUrl(seed: string): string {
+export function artworkDataUrl(seed: string, isPlaying = false): string {
   const hash = hashString(seed);
   const colors = PALETTES[hash % PALETTES.length];
   const angle = (hash % 4) * 45;
+  const animation = isPlaying
+    ? "<animateTransform attributeName='transform' type='rotate' from='0 256 256' to='360 256 256' dur='4s' repeatCount='indefinite'/>"
+    : '';
   const svg = [
     "<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'>",
     "<defs><linearGradient id='g' gradientTransform='rotate(" + angle + " 0.5 0.5)'>",
     "<stop offset='0%' stop-color='" + colors[0] + "'/>",
     "<stop offset='55%' stop-color='" + colors[1] + "'/>",
     "<stop offset='100%' stop-color='" + colors[2] + "'/>",
-    '</linearGradient></defs>',
-    "<rect width='512' height='512' fill='url(#g)'/>",
-    "<g fill='#ffffff'>",
-    "<rect x='300' y='150' width='26' height='200' rx='13'/>",
-    "<path d='M326 150 C372 156 396 182 396 220 C384 196 356 186 326 196 Z'/>",
-    "<ellipse cx='268' cy='352' rx='58' ry='44' transform='rotate(-18 268 352)'/>",
+    "<radialGradient id='disc' cx='30%' cy='24%' r='80%'>",
+    "<stop offset='0%' stop-color='#252532'/>",
+    "<stop offset='72%' stop-color='#090910'/>",
+    "<stop offset='100%' stop-color='#020207'/>",
+    '</radialGradient></linearGradient></defs>',
+    "<rect width='512' height='512' rx='36' fill='url(#g)'/>",
+    "<g>",
+    "<circle cx='256' cy='256' r='205' fill='url(#disc)'/>",
+    "<g fill='none' stroke='#ffffff' stroke-opacity='.12'>",
+    "<circle cx='256' cy='256' r='188' stroke-width='4'/>",
+    "<circle cx='256' cy='256' r='170' stroke-width='3'/>",
+    "<circle cx='256' cy='256' r='150' stroke-width='3'/>",
+    "<circle cx='256' cy='256' r='130' stroke-width='2'/>",
+    "<circle cx='256' cy='256' r='110' stroke-width='2'/>",
+    '</g>',
+    "<path d='M118 144 A168 168 0 0 1 350 94' fill='none' stroke='#ffffff' stroke-opacity='.28' stroke-width='10' stroke-linecap='round'/>",
+    "<circle cx='256' cy='256' r='72' fill='" + colors[0] + "'/>",
+    "<circle cx='256' cy='256' r='72' fill='none' stroke='#ffffff' stroke-opacity='.2' stroke-width='4'/>",
+    "<circle cx='256' cy='256' r='12' fill='#090910'/>",
+    animation,
     '</g></svg>',
   ].join('');
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
