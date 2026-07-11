@@ -74,8 +74,9 @@ Music–flavoured single-page app deployed to **GitHub Pages**.
    where hardware buttons control volume; works on desktop/Android). Background
    playback relies on the Media Session API (`useMediaSession`) + plain `<audio>`.
 4. **PWA icon must be PNG.** iOS ignores an SVG `apple-touch-icon`. Real PNGs live in
-   `public/` (`apple-touch-icon.png` 180, `icon-192.png`, `icon-512.png`) +
-   `manifest.webmanifest`; `index.html` references them. Regenerate from
+   `public/` (`apple-touch-icon-v2.png` 180, `icon-192-v2.png`, `icon-512-v2.png`) +
+   `manifest-v2.webmanifest`; `index.html` references them. Version icon filenames
+   when replacing artwork so iOS fetches the new home-screen icon. Regenerate from
    `public/favicon.svg` (a canvas render → PNG works).
 5. **Safe areas.** `index.html` sets `viewport-fit=cover`. The app shell pads with
    `env(safe-area-inset-top/bottom)` so content clears the notch/Dynamic Island and
